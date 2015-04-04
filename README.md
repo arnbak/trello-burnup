@@ -36,7 +36,7 @@ https://protected-dawn-1483.herokuapp.com
 Developing
 ----------
 
-Technically the frontend is written in AngularJS, with Bootstrap. The backend is a scala based play framework application with a postgresql database. 
+Technically the frontend is written in AngularJS, with Bootstrap and to some degree play html templates. The backend is a scala based play framework application with a postgresql database. 
 
 The application is deployed at heroku. And can be accessed at the previously given url.
 
@@ -76,34 +76,4 @@ Start the app with the ~run command:
 
 ```
 [burnup-app] $ ~run
-```
-
-####Frontend
-
-The frontend part, is located in the ```/ui``` directory.
-
-The ui project is set up using npm, gulp and bower.
-
-To install dependencies the following in the ```/ui``` directory
-
-```
-$ npm install
-```
-
-and
-
-```
-$ bower install
-```
-
-To start the app with 
-
-```
-$ gulp serve
-```
-
-To serve the compiled app:
-
-```
-$ gulp serve:dist
 ```
