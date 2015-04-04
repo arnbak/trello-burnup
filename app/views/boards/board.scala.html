@@ -1,0 +1,56 @@
+@(title: String, user: Option[models.User] = None, board: Option[services.Board])(content: Html)
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>@title</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width,maximum-scale=1"/>
+        <link href="//fonts.googleapis.com/css?family=PT+Serif:700italic" rel="stylesheet" type="text/css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans+Condensed:700,300" rel="stylesheet" type="text/css">
+        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("css/bootstrap.min.css"))'>
+        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("font-awesome/4.3.0/css/font-awesome.css"))'>
+        <link rel='stylesheet' href='@routes.Assets.versioned("css/main.min.css")'>
+
+    </head>
+    <body>
+        <div class="">
+        @fragments.header(user)
+        </div>
+        <div class="container-fluid">
+        @content
+        </div>
+
+
+        <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.js"))'></script>
+        <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular.min.js"))'></script>
+
+        <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-ui-router.min.js"))'></script>
+        <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("highcharts-ng.js"))'></script>
+        <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("highcharts.js"))'></script>
+
+        <script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/app.module.js")'></script>
+        @*<script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/app.controller.js")'></script>*@
+        <script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/board/board.module.js")'></script>
+        <script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/board/board.routes.js")'></script>
+        <script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/board/board.controller.js")'></script>
+        <script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/board/board.service.js")'></script>
+        @*<script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/dashboard/dashboard.module.js")'></script>*@
+        @*<script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/dashboard/dashboard.controller.js")'></script>*@
+        @*<script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/dashboard/dashboard.routes.js")'></script>*@
+        @*<script type='text/javascript' src='@routes.Assets.versioned("javascripts/app/dashboard/board.controller.js")'></script>*@
+
+        <script type='text/javascript' src='@routes.Assets.versioned("javascripts/common/services/trello.service.js")'></script>
+        @*<script src="@routes.WebJarAssets.formatted()../bower_components/angular/angular.js"></script>*@
+        @*<script src="../bower_components/angular-messages/angular-messages.js"></script>*@
+        @*<script src="../bower_components/angular-animate/angular-animate.js"></script>*@
+        @*<script src="../bower_components/angular-cookies/angular-cookies.js"></script>*@
+        @*<script src="../bower_components/angular-ui-router/release/angular-ui-router.js"></script>*@
+        @*<script src="../bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>*@
+        @*<script src="../bower_components/highcharts-ng/dist/highcharts-ng.js"></script>*@
+        @*<script src="../bower_components/highcharts/highcharts.js"></script>*@
+        @*<script src="../bower_components/angular-toastr/dist/angular-toastr.js"></script>*@
+    </body>
+
+</html>

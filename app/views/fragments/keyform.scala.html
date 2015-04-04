@@ -1,0 +1,32 @@
+@(keyForm: Form[controllers.UserController.UserKey], user: Option[models.User] = None)(implicit flash: Flash)
+
+@main("KeyForm", user) {
+
+    <div class="row">
+        <div class="col-md-6">
+            @flash.get("error").map { message =>
+                <div class="alert alert-danger" role="alert">
+                    <strong>Fejl!</strong> @message
+                </div>
+            }
+
+            @flash.get("success").map { message =>
+                <div class="alert alert-success" role="alert">
+                    <strong>Success!</strong> @message
+                </div>
+            }
+        </div>
+    </div>
+
+    @helper.form(action = routes.UserController.saveKey()) {
+
+        @keyForm.globalError.map { error =>
+            <p class="error">
+                @error.message
+            </p>
+        }
+        @helper.inputText(keyForm("key"), '_label -> "Nøgle")
+
+        <button type="submit">Gem nøglen</button>
+    }
+}

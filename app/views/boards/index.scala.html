@@ -1,0 +1,12 @@
+@(title: String, user: Option[models.User] = None, board: Option[services.Board])
+
+
+@boards.board("Board", user, board) {
+    <div ng-app ="burnupApp">
+
+        @board.map { b =>
+            Viser info for board @b.name
+        }
+        <div ui-view></div>
+    </div>
+}

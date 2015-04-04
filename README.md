@@ -1,0 +1,109 @@
+Burn Up Tool for Trello Boards
+==============================
+
+This tool gives the possibility to create burnup graphs for Trello boards. 
+
+It works by running a daily job, that sum the various points to be able to show the graph that represents the progress.
+
+
+Usage
+-----
+
+Boards should ofcourse be created in Trello. Further more a configuration card should be added to each board for which a graph is needed. 
+
+The configuration card should contain two elements, which defines a start date and an end date. 
+
+1. add a card named ```Config```
+
+2. add two elements ```[start] ddMMyyyy``` and ```[end] ddMMyyy``` which defines the period for which the product is being developed.
+
+
+To define a scope, add a estimate to each element in each card. It should be prepended to each element in the form: ```[10] some name```
+
+This will add the element in the scope count. A label of the color red or purple can be added to, to remove it from the scope count. 
+
+When a given element is being worked on, a blue label can be added to provide a in progress graph. 
+
+When a task is done, replace the in progress label with a green label. And it will count in the done task. 
+
+The application can be accessed at:
+
+```
+https://protected-dawn-1483.herokuapp.com
+```
+
+
+Developing
+----------
+
+Technically the frontend is written in AngularJS, with Bootstrap. The backend is a scala based play framework application with a postgresql database. 
+
+The application is deployed at heroku. And can be accessed at the previously given url.
+
+All the code is in the GIT repository found here: 
+
+```
+http://emeagitkol.emea.apc.com/projects/SD/repos/release-board-for-trello
+```
+
+####Getting started
+
+First of all, this is a play framework application. More info can be found here: http://www.playframework.com
+
+Start by cloning the repository
+
+```
+$ git clone http://SESA356074@emeagitkol.emea.apc.com/scm/sd/release-board-for-trello.git
+```
+
+This application is a playframwork app, more info about the playframework can be found here: [http://www.playframework.com](http://www.playframework.com)
+
+Before running the backend part. Setup a database, and add the correct url in the ```conf/application.conf```
+
+Go into the play/activator console by typing 
+
+```$ activator ```
+
+Which gives the following output:
+
+```
+[info] Loading project definition from /Users/lars/Development/burnup-app/project
+[info] Set current project to burnup-app (in build file:/Users/lars/Development/burnup-app/)
+[burnup-app] $
+```
+
+Start the app with the ~run command:
+
+```
+[burnup-app] $ ~run
+```
+
+####Frontend
+
+The frontend part, is located in the ```/ui``` directory.
+
+The ui project is set up using npm, gulp and bower.
+
+To install dependencies the following in the ```/ui``` directory
+
+```
+$ npm install
+```
+
+and
+
+```
+$ bower install
+```
+
+To start the app with 
+
+```
+$ gulp serve
+```
+
+To serve the compiled app:
+
+```
+$ gulp serve:dist
+```

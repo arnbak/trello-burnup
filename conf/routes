@@ -1,0 +1,36 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+GET         /                       controllers.Application.dashboard
+GET         /dashboard              controllers.Application.dashboard
+
+GET         /create                 controllers.LoginController.createPage
+POST        /create                 controllers.LoginController.create
+
+GET         /login                  controllers.LoginController.loginPage
+POST        /login                  controllers.LoginController.login
+
+GET         /logout                 controllers.LoginController.logout
+
+GET         /keyform                controllers.UserController.keyForm
+POST        /savekey                controllers.UserController.saveKey
+
+GET         /tokenform              controllers.UserController.tokenForm
+POST        /savetoken              controllers.UserController.saveToken
+
+GET         /accumulate             controllers.TrelloController.accumulateToday()
+
+GET         /board/:id              controllers.BoardController.board(id: String)
+GET         /period/:boardId        controllers.TrelloController.period(boardId: String)
+GET         /series/:boardId        controllers.TrelloController.series(boardId: String)
+
+
+GET         /profile                controllers.UserController.profile
+
+# Map static resources from the /public folder to the /assets URL path
+GET         /assets/*file           controllers.Assets.versioned(path="/public", file: Asset)
+
+# WebJars
+GET         /webjars/*file          controllers.WebJarAssets.at(file)
+

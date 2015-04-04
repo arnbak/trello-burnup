@@ -1,0 +1,39 @@
+@(user: Option[models.User] = None)
+
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation" bs-navbar>
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle"  data-toggle="collapse" data-target=".navbar-collapse" ng-init="header.isCollapsed = true" ng-click="header.isCollapsed = !header.isCollapsed">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            @user.map { user =>
+                <a class="navbar-brand" href="/">Dashboard</a>
+            }
+
+        </div>
+        <div class="collapse navbar-collapse">
+            @user.map { user =>
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="/">Forside</a></li>
+                </ul>
+            }
+
+            <ul class="nav navbar-nav pull-right">
+            @user match {
+                case Some(user) => {
+                    <li><a href="/profile"><i class="fa fa-user"></i>&nbsp;@user.email</a></li>
+                    <li><a href="@routes.LoginController.logout()"><i class="fa fa-cog"></i>&nbsp;Log Ud</a></li>
+
+                }
+                case None => {
+                    <li><a href="/login">Log Ind</a></li>
+                    <li><a href="/create">Opret Bruger</a></li>
+                }
+            }
+            </ul>
+        </div>
+    </div>
+</div>

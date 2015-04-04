@@ -1,0 +1,32 @@
+@(tokenForm: Form[controllers.UserController.UserToken], user: Option[models.User]= None)(implicit flash: Flash)
+
+@main("Token Form", user) {
+    <div class="row">
+        <div class="col-md-6">
+            @flash.get("error").map { message =>
+                <div class="alert alert-danger" role="alert">
+                    <strong>Fejl!</strong> @message
+                </div>
+            }
+
+            @flash.get("success").map { message =>
+                <div class="alert alert-success" role="alert">
+                    <strong>Success!</strong> @message
+                </div>
+            }
+        </div>
+    </div>
+
+    @helper.form(action = routes.UserController.saveToken()) {
+
+        @tokenForm.globalError.map { error =>
+            <p class="error">
+                @error.message
+            </p>
+        }
+        @helper.inputText(tokenForm("token"), '_label -> "Token")
+
+        <button type="submit">Gem nøglen</button>
+    }
+}
+
