@@ -5,6 +5,7 @@ target
 tmp
 .history
 dist
+.DS_Store
 /.idea
 /*.iml
 /out
