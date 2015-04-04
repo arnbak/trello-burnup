@@ -1,6 +1,8 @@
 Burn Up Tool for Trello Boards
 ==============================
 
+[![Build Status](https://travis-ci.org/arnbak/trello-burnup.svg?branch=master)](https://travis-ci.org/arnbak/trello-burnup)
+
 This tool gives the possibility to create burnup graphs for Trello boards. 
 
 It works by running a daily job, that sum the various points to be able to show the graph that represents the progress.
@@ -43,7 +45,7 @@ The application is deployed at heroku. And can be accessed at the previously giv
 All the code is in the GIT repository found here: 
 
 ```
-http://emeagitkol.emea.apc.com/projects/SD/repos/release-board-for-trello
+https://github.com/arnbak/trello-burnup
 ```
 
 ####Getting started
@@ -53,7 +55,7 @@ First of all, this is a play framework application. More info can be found here:
 Start by cloning the repository
 
 ```
-$ git clone http://SESA356074@emeagitkol.emea.apc.com/scm/sd/release-board-for-trello.git
+$ git clone git@github.com:arnbak/trello-burnup.git
 ```
 
 Before running the backend part. Setup a database, and add the correct url in the ```conf/application.conf```
