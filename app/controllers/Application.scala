@@ -15,24 +15,29 @@ object Application extends Controller with Secured {
 
     DB.withSession { implicit s =>
       Users.findByEmail(email).map { user =>
-        val authUrl: Option[String] = Some("https://trello.com/1/authorize?key="+user.key.getOrElse("")+"&name=TrelloReleaseBurnUP&expiration=never&response_type=token&scope=read")
+
+        val authUrl: Option[String] = user.key.map { key =>
+          s"https://trello.com/1/authorize?key=$key&name=TrelloReleaseBurnUP&expiration=never&response_type=token&scope=read"
+        }
 
         val boardUrl = (for {
           key <- user.key
           token <- user.token
           if !token.isEmpty && !key.isEmpty
         } yield (key, token)).map { v =>
-          "https://api.trello.com/1/members/me?key=" + v._1 + "&token=" + v._2 +"&boards=all&organizations=all"
+          s"https://api.trello.com/1/members/me?key=${v._1}&token=${v._2}&boards=all&organizations=all"
         }
 
-        for {
-          boardsForUser <- TrelloService.member(boardUrl.get)
-        } yield {
-          Ok(views.html.index("Dashboard", Some(user), authUrl, Some(boardsForUser)))
+        boardUrl.map { url =>
+          TrelloService.member(url).flatMap { m =>
+            Future.successful(Ok(views.html.index("Dashboard", Some(user), authUrl, Some(m))))
+          }
+        } getOrElse {
+          Future.successful(Ok(views.html.index("Dashboard", Some(user), authUrl, None)))
         }
 
       } getOrElse {
-        Future.successful(Ok(views.html.index("Dashboard", None, None, None)))
+        Future.successful(Redirect(routes.LoginController.loginPage()))
       }
     }
   }
