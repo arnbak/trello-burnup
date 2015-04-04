@@ -40,6 +40,3 @@ StylusKeys.useNib in Assets := true
 StylusKeys.compress in Assets := true
 
 pipelineStages := Seq(digest, gzip)
-
-//execute complete build - activator cleanjs buildjs cleanplayjs deployjs clean rpm:package-bin // will build javascript and package rpm
-// sbt universal:package-zip-tarball

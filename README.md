@@ -56,8 +56,6 @@ Start by cloning the repository
 $ git clone http://SESA356074@emeagitkol.emea.apc.com/scm/sd/release-board-for-trello.git
 ```
 
-This application is a playframwork app, more info about the playframework can be found here: [http://www.playframework.com](http://www.playframework.com)
-
 Before running the backend part. Setup a database, and add the correct url in the ```conf/application.conf```
 
 Go into the play/activator console by typing 
