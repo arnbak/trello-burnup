@@ -1,6 +1,6 @@
 package controllers
 
-import models.Users
+import models.{PageInfo, Users}
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc._
@@ -8,8 +8,6 @@ import play.api.db.slick._
 
 
 object UserController extends Controller with Secured {
-
-
 
   case class UserKey(key: String)
 
@@ -20,12 +18,12 @@ object UserController extends Controller with Secured {
   )
 
   def keyForm = IsAuthenticated { user => implicit request =>
-    Ok(views.html.fragments.keyform(userKeyForm, Some(user)))
+    Ok(views.html.fragments.keyform(PageInfo("Indtast nøgle", request.uri), userKeyForm, Some(user)))
   }
 
   def saveKey = IsAuthenticated { user => implicit request =>
     userKeyForm.bindFromRequest.fold(
-      error => BadRequest(views.html.fragments.keyform(error, Some(user))),
+      error => BadRequest(views.html.fragments.keyform(PageInfo("Indtast nøgle", request.uri), error, Some(user))),
       success => {
         Users.addKey(user.email, success.key).map { u =>
           Redirect(routes.Application.dashboard()).flashing("success" -> "Nøglen er gemt! Du skal nu genere et token!")
@@ -45,13 +43,13 @@ object UserController extends Controller with Secured {
   )
 
   def tokenForm = IsAuthenticated { user => implicit request =>
-    Ok(views.html.fragments.tokenform(userTokenForm, Some(user)))
+    Ok(views.html.fragments.tokenform(PageInfo("Indtast token", request.uri), userTokenForm, Some(user)))
   }
 
 
   def saveToken = IsAuthenticated { user => implicit request =>
     userTokenForm.bindFromRequest.fold(
-      error => BadRequest(views.html.fragments.tokenform(error, Some(user))),
+      error => BadRequest(views.html.fragments.tokenform(PageInfo("Indtast nøgle", request.uri), error, Some(user))),
       success => {
           Users.addToken(user.email, success.token).map { u =>
             Redirect(routes.Application.dashboard()).flashing("success" -> "Token er gemt!")
@@ -64,7 +62,7 @@ object UserController extends Controller with Secured {
   }
 
   def profile = IsAuthenticated { user =>  implicit request =>
-    Ok(views.html.profile.profile("Profil", Some(user)))
+    Ok(views.html.profile.profile(PageInfo("Profil", request.uri), Some(user)))
   }
 
 

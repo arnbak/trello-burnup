@@ -1,6 +1,8 @@
-@(keyForm: Form[controllers.UserController.UserKey], user: Option[models.User] = None)(implicit flash: Flash)
+@(info: models.PageInfo,
+        keyForm: Form[controllers.UserController.UserKey],
+        user: Option[models.User] = None)(implicit flash: Flash)
 
-@main("KeyForm", user) {
+@main(info, user) {
 
     <div class="row">
         <div class="col-md-6">

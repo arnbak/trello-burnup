@@ -25,7 +25,7 @@ object LoginController extends Controller with Secured {
 
   def create = DBAction { implicit request =>
     loginForm.bindFromRequest.fold(
-      error => BadRequest(views.html.create("Opret", error)),
+      error => BadRequest(views.html.create(PageInfo("Opret bruger", request.uri), error)),
       success =>
         Users.findByEmail(success.email) match {
           case Some(u) => Redirect(routes.LoginController.createPage()).flashing("error" -> "Den valgte email addresse findes allerede.")
@@ -41,7 +41,7 @@ object LoginController extends Controller with Secured {
   }
 
   def createPage = Action { implicit request =>
-    Ok(views.html.create("Opret", loginForm))
+    Ok(views.html.create(PageInfo("Opret bruger", request.uri), loginForm))
   }
 
   def login = DBAction { implicit request =>

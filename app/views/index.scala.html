@@ -1,9 +1,9 @@
-@(pageTitle: String,
+@(info: models.PageInfo,
         user: Option[models.User] = None,
         authUrl: Option[String] = None,
         member: Option[services.Member])(implicit flash: Flash)
 
-@main(pageTitle, user) {
+@main(info, user) {
 
     <div class="row">
         <div class="col-md-6">

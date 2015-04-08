@@ -1,6 +1,6 @@
-@(tokenForm: Form[controllers.UserController.UserToken], user: Option[models.User]= None)(implicit flash: Flash)
+@(info: models.PageInfo, tokenForm: Form[controllers.UserController.UserToken], user: Option[models.User] = None)(implicit flash: Flash)
 
-@main("Token Form", user) {
+@main(info, user) {
     <div class="row">
         <div class="col-md-6">
             @flash.get("error").map { message =>

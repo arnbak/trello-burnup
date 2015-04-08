@@ -1,6 +1,6 @@
 package controllers
 
-import models.Users
+import models.{PageInfo, Users}
 
 import play.api.libs.json.Json
 import play.api.mvc.Controller
@@ -28,10 +28,10 @@ object BoardController extends Controller with Secured {
         boardUrl.map { url =>
           TrelloService.member(url).flatMap { m =>
             val boardOpt = m.boards.find(_.id == id)
-            Future.successful(Ok(views.html.boards.index("Board info",Some(user), boardOpt)))
+            Future.successful(Ok(views.html.boards.index(PageInfo("Board Info", request.uri), Some(user), boardOpt)))
           }
         } getOrElse {
-          Future.successful(Ok(views.html.boards.index("Board info",Some(user), None)))
+          Future.successful(Ok(views.html.boards.index(PageInfo("Board Info", request.uri), Some(user), None)))
         }
       } getOrElse {
         Future.successful(Unauthorized(Json.obj("message" -> s"Authorization nedded")))

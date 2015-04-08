@@ -1,10 +1,10 @@
-@(title: String, user: Option[models.User] = None)(content: Html)
+@(info: models.PageInfo, user: Option[models.User] = None)(content: Html)
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title>@title | @util.Config.siteTitle</title>
+        <title>@info.title | @util.Config.siteTitle</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width,maximum-scale=1"/>
         <link href="//fonts.googleapis.com/css?family=PT+Serif:700italic" rel="stylesheet" type="text/css">
@@ -15,7 +15,7 @@
     </head>
     <body>
         <div class="">
-            @fragments.header(user)
+            @fragments.header(info, user)
         </div>
         <div class="container-fluid">
             @content

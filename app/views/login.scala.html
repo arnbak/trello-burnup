@@ -1,6 +1,6 @@
-@(pageInfo: models.PageInfo, loginForm: Form[controllers.LoginController.LoginForm])(implicit flash: Flash)
+@(info: models.PageInfo, loginForm: Form[controllers.LoginController.LoginForm])(implicit flash: Flash)
 
-@main(pageInfo.title, None) {
+@main(info, None) {
 
     <div class="row">
         <div class="col-md-6">

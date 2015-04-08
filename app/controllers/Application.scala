@@ -1,6 +1,6 @@
 package controllers
 
-import models.{Users, User}
+import models.{PageInfo, Users, User}
 import play.api.mvc._
 import play.api.db.slick._
 import play.api.Play.current
@@ -30,10 +30,10 @@ object Application extends Controller with Secured {
 
         boardUrl.map { url =>
           TrelloService.member(url).flatMap { m =>
-            Future.successful(Ok(views.html.index("Dashboard", Some(user), authUrl, Some(m))))
+            Future.successful(Ok(views.html.index(PageInfo("Dashboard", request.uri), Some(user), authUrl, Some(m))))
           }
         } getOrElse {
-          Future.successful(Ok(views.html.index("Dashboard", Some(user), authUrl, None)))
+          Future.successful(Ok(views.html.index(PageInfo("Dashboard", request.uri), Some(user), authUrl, None)))
         }
 
       } getOrElse {

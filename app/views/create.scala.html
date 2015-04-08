@@ -1,6 +1,6 @@
-@(pageTitle: String, loginForm: Form[controllers.LoginController.LoginForm])(implicit flash: Flash)
+@(info: models.PageInfo, loginForm: Form[controllers.LoginController.LoginForm])(implicit flash: Flash)
 
-@main(pageTitle, None) {
+@main(info, None) {
     <h3>Opret en bruger på systemet!</h3>
 
     <div class="row">

@@ -1,7 +1,7 @@
-@(title: String, user: Option[models.User] = None, board: Option[services.Board])
+@(info: models.PageInfo, user: Option[models.User] = None, board: Option[services.Board])
 
 
-@boards.board("Board", user, board) {
+@boards.board(info, user, board) {
     <div ng-app ="burnupApp">
 
         @board.map { b =>

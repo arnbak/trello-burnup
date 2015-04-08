@@ -1,6 +1,6 @@
-@(title: String, user: Option[models.User] = None)
+@(info: models.PageInfo, user: Option[models.User] = None)
 
-@main(title, user){
+@main(info, user){
     <h1>User profile</h1>
     @user
 }
