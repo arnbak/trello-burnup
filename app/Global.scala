@@ -1,6 +1,5 @@
 import actors.{AccumulationActor}
 import akka.actor.{Props, ActorRef}
-import filters.CORSFilter
 import play.Logger
 import play.api.libs.concurrent.Akka
 import play.api.{Application, GlobalSettings}
@@ -9,7 +8,7 @@ import scala.concurrent.duration._
 import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object Global extends WithFilters(CORSFilter()) with GlobalSettings {
+object Global extends GlobalSettings {
 
   override def onStart(app: Application) {
 
