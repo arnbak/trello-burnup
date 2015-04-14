@@ -9,15 +9,11 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            @user.map { user =>
-                <a class="navbar-brand" href="/">Dashboard</a>
-            }
-
         </div>
         <div class="collapse navbar-collapse">
             @user.map { user =>
                 <ul class="nav navbar-nav">
-                    <li @if(info.url.equals("/")) {class="active"}><a href="/">Forside</a></li>
+                    <li @if(info.url.equals("/")) {class="active"}><a href="/"><i class="fa fa-server"></i>&nbsp;Dashboard</a></li>
                 </ul>
             }
 
@@ -25,12 +21,12 @@
             @user match {
                 case Some(user) => {
                     <li @if(info.url.equals("/profile")) {class="active"}><a href="/profile"><i class="fa fa-user"></i>&nbsp;@user.email</a></li>
-                    <li><a href="@routes.LoginController.logout()"><i class="fa fa-sign-out"></i>&nbsp;Log Ud</a></li>
+                    <li><a href="@routes.LoginController.logout()"><i class="fa fa-sign-out"></i>&nbsp;Sign out</a></li>
 
                 }
                 case None => {
-                    <li><a href="/login"><i class="fa fa-sign-in"></i>&nbsp;Log Ind</a></li>
-                    <li><a href="/create"><i class="fa fa-user-plus"></i>&nbsp;Opret Bruger</a></li>
+                    <li><a href="/login"><i class="fa fa-sign-in"></i>&nbsp;Sign in</a></li>
+                    <li><a href="/create"><i class="fa fa-user-plus"></i>&nbsp;Create user</a></li>
                 }
             }
             </ul>
