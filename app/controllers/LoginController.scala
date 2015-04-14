@@ -49,7 +49,7 @@ object LoginController extends Controller with Secured {
       error => BadRequest(views.html.login(PageInfo("Sign in", request.uri), error)),
       success =>
         Users.validUser(success.email, success.password).map { user =>
-          Redirect(routes.Application.dashboard()).flashing("success" -> "").withSession("email" -> user.email)
+          Redirect(routes.Application.dashboard()).flashing("success" -> "Welcome honored user.").withSession("email" -> user.email)
         } getOrElse {
           Redirect(routes.LoginController.loginPage()).flashing("error" -> "We could not sign you in, the user/password combination doesn't look right! Give it another try!")
         }
@@ -57,7 +57,7 @@ object LoginController extends Controller with Secured {
   }
 
   def logout = IsAuthenticated { user => implicit request =>
-    Redirect(routes.LoginController.loginPage()).withNewSession.flashing("success" -> "Welcome, you are signed in!")
+    Redirect(routes.LoginController.loginPage()).withNewSession.flashing("success" -> "You are now signed out, thank you for using this application! Please come again!")
   }
 
 }
