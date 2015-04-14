@@ -6,7 +6,7 @@
 @main(info, user) {
 
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-6">
             @member.map { board =>
                 <h2>Welcome @board.fullName</h2>
 
@@ -18,15 +18,15 @@
                 </ul>
 
             }.getOrElse {
-                <b>Der er ikke registreret nogle adgangs nøgler til Trello for denne bruger.</b>
-                <br />
 
+                <h4>No Trello developer key and token exists for this user.</h4>
 
-                <br />
+                <small>We need to add these to your user.</small>
+
                 <ol>
-                    <li>1. Log in to trello here: <a href="http://trello.com" target="_blank">trello.com</a></li>
-                    <li>2. Call this url: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a> (Save the key and secret)</li>
-                    <li>3. Save the key <a href="@routes.UserController.keyForm()">here</a></li>
+                    <li>Sign in to trello here: <a href="http://trello.com" target="_blank">trello.com</a><small> (Opens a new window)</small></li>
+                    <li>Call this url: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a> <small>(Copy the key to the clipboard)</small></li>
+                    <li>Save the developer key <a href="@routes.UserController.keyForm()">here</a></li>
 
                     @user.map { u =>
                         @u.key.map { key =>
@@ -35,15 +35,15 @@
                     }
 
                     @authUrl.map { url =>
-                        <li>4. Authorize the app (this) <a href="@url" target="_blank">@url</a></li>
-                        <li>5. Save the token <a href="@routes.UserController.tokenForm()">here</a></li>
+                        <li>Authorize the app (this) <a href="@url" target="_blank">@url</a></li>
+                        <li>Save the token <a href="@routes.UserController.tokenForm()">here</a></li>
                     }
 
                 </ol>
             }
         </div>
 
-        <div class="col-md-8">
+        <div class="col-md-6">
             @flash.get("success").map { message =>
                 <div class="alert alert-success" role="alert">
                     <strong>Success!</strong> @message

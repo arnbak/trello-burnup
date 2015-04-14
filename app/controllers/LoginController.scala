@@ -31,9 +31,9 @@ object LoginController extends Controller with Secured {
           case Some(u) => Redirect(routes.LoginController.createPage()).flashing("error" -> "That email address is already in use in this system!")
           case None =>
             Users.create(success.email, None, success.password).map { user =>
-              Redirect(routes.LoginController.loginPage()).flashing("success" -> "The user have been created, welcome!")
+              Redirect(routes.LoginController.loginPage()).flashing("success" -> "The user have been created, now go ahead and sign in with it!")
             } getOrElse {
-              Redirect(routes.LoginController.createPage()).flashing("error" -> "We had no luck creating the user")
+              Redirect(routes.LoginController.createPage()).flashing("error" -> "We had no luck creating the user!")
             }
 
         }
@@ -51,7 +51,7 @@ object LoginController extends Controller with Secured {
         Users.validUser(success.email, success.password).map { user =>
           Redirect(routes.Application.dashboard()).flashing("success" -> "").withSession("email" -> user.email)
         } getOrElse {
-          Redirect(routes.LoginController.loginPage()).flashing("error" -> "We could not sign you in ")
+          Redirect(routes.LoginController.loginPage()).flashing("error" -> "We could not sign you in, the user/password combination doesn't look right! Give it another try!")
         }
     )
   }

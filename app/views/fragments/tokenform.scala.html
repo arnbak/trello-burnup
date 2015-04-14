@@ -3,6 +3,20 @@
 @main(info, user) {
     <div class="row">
         <div class="col-md-6">
+            <h4>Save the token!</h4>
+            @helper.form(action = routes.UserController.saveToken()) {
+
+                @tokenForm.globalError.map { error =>
+                    <p class="error">
+                        @error.message
+                    </p>
+                }
+                @helper.inputText(tokenForm("token"), '_label -> "Token", '_showConstraints -> false)
+
+                <button type="submit">Save the token</button>
+            }
+        </div>
+        <div class="col-md-6">
             @flash.get("error").map { message =>
                 <div class="alert alert-danger" role="alert">
                     <strong>Fejl!</strong> @message
@@ -17,16 +31,8 @@
         </div>
     </div>
 
-    @helper.form(action = routes.UserController.saveToken()) {
 
-        @tokenForm.globalError.map { error =>
-            <p class="error">
-                @error.message
-            </p>
-        }
-        @helper.inputText(tokenForm("token"), '_label -> "Token")
 
-        <button type="submit">Gem nøglen</button>
-    }
+
 }
 
