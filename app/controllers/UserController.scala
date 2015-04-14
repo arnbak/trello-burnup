@@ -18,17 +18,17 @@ object UserController extends Controller with Secured {
   )
 
   def keyForm = IsAuthenticated { user => implicit request =>
-    Ok(views.html.fragments.keyform(PageInfo("Indtast nøgle", request.uri), userKeyForm, Some(user)))
+    Ok(views.html.fragments.keyform(PageInfo("Add trello key", request.uri), userKeyForm, Some(user)))
   }
 
   def saveKey = IsAuthenticated { user => implicit request =>
     userKeyForm.bindFromRequest.fold(
-      error => BadRequest(views.html.fragments.keyform(PageInfo("Indtast nøgle", request.uri), error, Some(user))),
+      error => BadRequest(views.html.fragments.keyform(PageInfo("Add trello key", request.uri), error, Some(user))),
       success => {
         Users.addKey(user.email, success.key).map { u =>
-          Redirect(routes.Application.dashboard()).flashing("success" -> "Nøglen er gemt! Du skal nu genere et token!")
+          Redirect(routes.Application.dashboard()).flashing("success" -> "The key is saved, its time for you to generate the token!")
         } getOrElse {
-          Redirect(routes.UserController.saveKey()).flashing("error" -> "Nøglen kunne ikke gemmes")
+          Redirect(routes.UserController.saveKey()).flashing("error" -> "We could not save that key!")
         }
       }
     )
@@ -43,18 +43,18 @@ object UserController extends Controller with Secured {
   )
 
   def tokenForm = IsAuthenticated { user => implicit request =>
-    Ok(views.html.fragments.tokenform(PageInfo("Indtast token", request.uri), userTokenForm, Some(user)))
+    Ok(views.html.fragments.tokenform(PageInfo("Enter token", request.uri), userTokenForm, Some(user)))
   }
 
 
   def saveToken = IsAuthenticated { user => implicit request =>
     userTokenForm.bindFromRequest.fold(
-      error => BadRequest(views.html.fragments.tokenform(PageInfo("Indtast nøgle", request.uri), error, Some(user))),
+      error => BadRequest(views.html.fragments.tokenform(PageInfo("Enter token", request.uri), error, Some(user))),
       success => {
           Users.addToken(user.email, success.token).map { u =>
-            Redirect(routes.Application.dashboard()).flashing("success" -> "Token er gemt!")
+            Redirect(routes.Application.dashboard()).flashing("success" -> "The token is saved!")
           } getOrElse {
-            Redirect(routes.Application.dashboard()).flashing("error" -> "Token er ikke gemt!")
+            Redirect(routes.Application.dashboard()).flashing("error" -> "We could not save the token!")
           }
 
       }
@@ -62,7 +62,7 @@ object UserController extends Controller with Secured {
   }
 
   def profile = IsAuthenticated { user =>  implicit request =>
-    Ok(views.html.profile.profile(PageInfo("Profil", request.uri), Some(user)))
+    Ok(views.html.profile.profile(PageInfo("Profile", request.uri), Some(user)))
   }
 
 

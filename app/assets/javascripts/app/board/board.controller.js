@@ -16,15 +16,11 @@
 
         vm.cards = {};
         vm.period = {};
-
+        vm.loading = false;
 
         function loadBoard() {
             vm.loading = true;
 
-            //BoardService.boardInfo(vm.boardid).then(function(board) {
-            //    vm.board = board;
-            //    return BoardService.period(vm.boardid);
-            //}).
             BoardService.period(vm.boardid).then(function(response) {
                 vm.period = response.data;
                 return BoardService.series(vm.boardid);
@@ -90,16 +86,16 @@
 
             }).catch(function(e) {
 
-                if(angular.equals(e, 'no info for board, is there a configuration card in the board?')) {
-                    //eventually show an error message
-                    toastr.error('No information for choosen board');
-                } else if(angular.equals(e.status, 501)) {
-                    toastr.error('Error occoured!');
-                } else if(angular.equals(e.status, 404)) {
-                    toastr.error('No information for selected board');
-                } else if(angular.equals(e.status, 0)) {
-                    toastr.error('Unable to connect to the backend, is the backend started ??');
-                }
+                //if(angular.equals(e, 'no info for board, is there a configuration card in the board?')) {
+                //    //eventually show an error message
+                //    toastr.error('No information for choosen board');
+                //} else if(angular.equals(e.status, 501)) {
+                //    toastr.error('Error occoured!');
+                //} else if(angular.equals(e.status, 404)) {
+                //    toastr.error('No information for selected board');
+                //} else if(angular.equals(e.status, 0)) {
+                //    toastr.error('Unable to connect to the backend, is the backend started ??');
+                //}
 
             }).finally(function() {
                 vm.loading = false;
@@ -111,7 +107,7 @@
 
         function accumulate() {
             //$window.location.assign("/dashboard")
-
+            vm.loading = true;
             BoardService.accumulateBoardInfo().then(function() {
                 loadBoard();
             });

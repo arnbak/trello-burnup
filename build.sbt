@@ -36,7 +36,4 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.3"
 )
 
-StylusKeys.useNib in Assets := true
-StylusKeys.compress in Assets := true
-
 pipelineStages := Seq(digest, gzip)

@@ -3,6 +3,22 @@
 @main(info, None) {
 
     <div class="row">
+        <div class="col-md-8">
+            For at bruge systemet, skal du have en bruger. Du opretter en <a href="@routes.LoginController.createPage()">her</a>
+            @helper.form(action = routes.LoginController.login()) {
+
+                @loginForm.globalError.map { error =>
+                    <p class="error">
+                        @error.message
+                    </p>
+                }
+
+                @helper.inputText(loginForm("email"), '_label -> "Email", '_showConstraints -> false)
+                @helper.inputPassword(loginForm("password"), '_label -> "Password", '_showConstraints -> false)
+
+                <button type="submit">Log ind</button>
+            }
+        </div>
         <div class="col-md-6">
             @flash.get("error").map { message =>
                 <div class="alert alert-danger" role="alert">
@@ -18,19 +34,9 @@
         </div>
     </div>
 
-    @helper.form(action = routes.LoginController.login()) {
 
-        @loginForm.globalError.map { error =>
-            <p class="error">
-                @error.message
-            </p>
-        }
 
-        @helper.inputText(loginForm("email"), '_label -> "Email", '_showConstraints -> false)
-        @helper.inputPassword(loginForm("password"), '_label -> "Password", '_showConstraints -> false)
 
-        <button type="submit">Log ind</button>
-    }
 
-    For at bruge systemet, skal du have en bruger. Du opretter en <a href="@routes.LoginController.createPage()">her</a>
+
 }

@@ -6,50 +6,51 @@
 @main(info, user) {
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
+            @member.map { board =>
+                <h2>Welcome @board.fullName</h2>
+
+                <h3>This is your boards</h3>
+                <ul>
+                    @for(mBoard <- member.get.boards) {
+                        <li><a href="/board/@mBoard.id">@mBoard.name</a></li>
+                    }
+                </ul>
+
+            }.getOrElse {
+                <b>Der er ikke registreret nogle adgangs nøgler til Trello for denne bruger.</b>
+                <br />
+
+
+                <br />
+                <ol>
+                    <li>1. Log in to trello here: <a href="http://trello.com" target="_blank">trello.com</a></li>
+                    <li>2. Call this url: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a> (Save the key and secret)</li>
+                    <li>3. Save the key <a href="@routes.UserController.keyForm()">here</a></li>
+
+                    @user.map { u =>
+                        @u.key.map { key =>
+
+                        }
+                    }
+
+                    @authUrl.map { url =>
+                        <li>4. Authorize the app (this) <a href="@url" target="_blank">@url</a></li>
+                        <li>5. Save the token <a href="@routes.UserController.tokenForm()">here</a></li>
+                    }
+
+                </ol>
+            }
+        </div>
+
+        <div class="col-md-8">
             @flash.get("success").map { message =>
                 <div class="alert alert-success" role="alert">
                     <strong>Success!</strong> @message
                 </div>
             }
         </div>
+
     </div>
-
-
-    @member.map { board =>
-        <h1>Welcome @board.fullName</h1>
-
-        <h2>This is your boards</h2>
-        <ul>
-            @for(mBoard <- member.get.boards) {
-                <li><a href="/board/@mBoard.id">@mBoard.name</a></li>
-            }
-        </ul>
-
-    }.getOrElse {
-        <b>Der er ikke registreret nogle adgangs nøgler til Trello for denne bruger.</b>
-        <br />
-
-
-        <br />
-        <ol>
-            <li>1. Log in to trello here: <a href="http://trello.com" target="_blank">trello.com</a></li>
-            <li>2. Call this url: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a> (Save the key and secret)</li>
-            <li>3. Save the key <a href="@routes.UserController.keyForm()">here</a></li>
-
-            @user.map { u =>
-                @u.key.map { key =>
-
-                }
-            }
-
-            @authUrl.map { url =>
-                <li>4. Authorize the app (this) <a href="@url" target="_blank">@url</a></li>
-                <li>5. Save the token <a href="@routes.UserController.tokenForm()">here</a></li>
-            }
-
-        </ol>
-    }
-
 
 }

@@ -85,7 +85,7 @@ object TrelloController extends Controller with Secured {
         }
 
         summarizeAndInsert(user.key, user.token, boardUrl).flatMap { _ =>
-          Future.successful(Ok(Json.obj("message" -> s"accumulation triggered in the futre")))
+          Future.successful(Ok(Json.obj("message" -> s"accumulation triggered in the future")))
         }
 
       } getOrElse {
