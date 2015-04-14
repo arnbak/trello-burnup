@@ -6,6 +6,7 @@ tmp
 .history
 dist
 .DS_Store
+.sass-cache
 /.idea
 /*.iml
 /out
@@ -14,3 +15,5 @@ dist
 /.project
 /RUNNING_PID
 /.settings
+
+conf/PROD.conf
