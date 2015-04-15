@@ -1,4 +1,4 @@
-@import "../../../target/scala-web/web-modules/main/webjars/lib/bootstrap-sass/stylesheets/bootstrap";
+@import "lib/bootstrap-sass/stylesheets/bootstrap";
 
 @mixin font-smoothing($value: antialiased) {
   @if $value == antialiased {
