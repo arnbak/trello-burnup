@@ -32,7 +32,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "angular-ui-router" % "0.2.13",
   "org.webjars" % "highcharts-ng" % "0.0.8",
   "org.webjars" % "highcharts" % "4.1.4",
-
+  "org.webjars" % "angular-nvd3" % "0.1.1",
+  "org.webjars" % "d3js" % "3.5.3",
   "org.apache.commons" % "commons-math3" % "3.3"
 )
 
