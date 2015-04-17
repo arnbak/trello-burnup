@@ -21,12 +21,12 @@ libraryDependencies ++= Seq(
   ws,
   filters,
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc41",
-  //"com.typesafe.slick" %% "slick" % "3.0.0-RC3",
   "com.typesafe.slick" %% "slick" % "2.1.0",
   "com.typesafe.play" %% "play-slick" % "0.8.1",
 
   "org.webjars" %% "webjars-play" % "2.3.0-2",
   "org.webjars" % "bootstrap" % "3.3.4",
+  "org.webjars" % "bootstrap-sass" % "3.3.1",
   "org.webjars" % "font-awesome" % "4.3.0-1",
   "org.webjars" % "angularjs" % "1.3.15",
   "org.webjars" % "angular-ui-router" % "0.2.13",
