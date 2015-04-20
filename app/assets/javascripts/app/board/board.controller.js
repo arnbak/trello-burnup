@@ -47,7 +47,8 @@
                     showMaxMin: false
                 },
                 yAxis: {
-                    axisLabel: 'Scope (v)'//,
+                    axisLabel: 'Scope',
+                    showMaxMin: false//,
                     //tickFormat: function(d){
                     //
                     //    return d3.format('.02f')(d);
@@ -61,7 +62,7 @@
             },
             title: {
                 enable: true,
-                text: 'Title for Line Chart'
+                text: 'Burn up chart'
             },
             subtitle: {
                 enable: true,
