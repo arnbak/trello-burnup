@@ -4,9 +4,9 @@
         module('board').
         controller('BoardController', BoardController);
 
-    BoardController.$inject =  ['$state','$q','$window','$location','BoardService'];
+    BoardController.$inject =  ['$window','BoardService'];
 
-    function BoardController($state, $q, $window, $location, BoardService) {
+    function BoardController($window, BoardService) {
         var pathname = $window.location.pathname.split('/');
 
         var vm = this;
@@ -26,8 +26,12 @@
                     bottom: 40,
                     left: 55
                 },
-                x: function(d){ return d.x; },
-                y: function(d){ return d.y; },
+                x: function(d) {
+                    return d[0];
+                },
+                y: function(d) {
+                    return d[1];
+                },
                 useInteractiveGuideline: true,
                 dispatch: {
                     stateChange: function(e){ console.log("stateChange"); },
@@ -36,17 +40,23 @@
                     tooltipHide: function(e){ console.log("tooltipHide"); }
                 },
                 xAxis: {
-                    axisLabel: 'Time (ms)'
+                    axisLabel: 'Period (datetime)',
+                    tickFormat: function(d) {
+                        return d3.time.format('%d-%m-%y')(new Date(d))
+                    },
+                    showMaxMin: false
                 },
                 yAxis: {
-                    axisLabel: 'Voltage (v)',
-                    tickFormat: function(d){
-                        return d3.format('.02f')(d);
-                    },
-                    axisLabelDistance: 30
+                    axisLabel: 'Scope (v)'//,
+                    //tickFormat: function(d){
+                    //
+                    //    return d3.format('.02f')(d);
+                    //}
+                    //axisLabelDistance: 30
                 },
                 callback: function(chart){
-                    console.log("!!! lineChart callback !!!");
+                    //console.log(chart);
+                    //console.log("!!! lineChart callback !!!");
                 }
             },
             title: {
@@ -70,40 +80,9 @@
                 }
             }
         };
-        vm.data = sinAndCos();
 
-        /*Random Data Generator */
-        function sinAndCos() {
-            var sin = [],sin2 = [],
-                cos = [];
+        vm.data = [];
 
-            //Data is represented as an array of {x,y} pairs.
-            for (var i = 0; i < 100; i++) {
-                sin.push({x: i, y: Math.sin(i/10)});
-                sin2.push({x: i, y: i % 10 == 5 ? null : Math.sin(i/10) *0.25 + 0.5});
-                cos.push({x: i, y: .5 * Math.cos(i/10+ 2) + Math.random() / 10});
-            }
-
-            //Line chart data should be sent as an array of series objects.
-            return [
-                {
-                    values: sin,      //values - represents the array of {x,y} data points
-                    key: 'Sine Wave', //key  - the name of the series.
-                    color: '#ff7f0e'  //color - optional: choose your own line color.
-                },
-                {
-                    values: cos,
-                    key: 'Cosine Wave',
-                    color: '#2ca02c'
-                },
-                {
-                    values: sin2,
-                    key: 'Another sine wave',
-                    color: '#7777ff',
-                    area: true      //area - set to true if you want this line to turn into a filled area chart.
-                }
-            ];
-        };
 
         function loadBoard() {
             vm.loading = true;
@@ -113,64 +92,34 @@
                 return BoardService.series(vm.boardid);
             }).then(function(response) {
 
-                vm.chartConfig.series = [];
+                //vm.chartConfig.series = [];
                 vm.scopeLine = response.data.scopeLine;
                 vm.finishedLine = response.data.finishedLine;
                 vm.bestLine = response.data.bestLine;
 
-                var _scopeLine = {
-                    type: 'line',
-                    name: 'Scope Line',
-                    //pointStart: $scope.period.startDate,
-                    data: vm.scopeLine,
-                    //pointInterval: 24*3600*1000,
-                    //connectNulls: true,
-                    //black
-                    color: '#45454A',
-                    marker: {
-                        radius: 3
-                    }
+
+
+                var newScopeLine = {
+                    values: vm.scopeLine,      //values - represents the array of {x,y} data points
+                    key: 'Scope Line', //key  - the name of the series.
+                    color: '#45454A'  //color - optional: choose your own line color.
                 };
 
-                var _bestLine = {
-                    type: 'line',
-                    name: 'Projected Scope',
-                    //pointStart: $scope.period.startDate,
-                    data: vm.bestLine,
-                    //pointInterval: 24*3600*1000,
-                    //connectNulls: true,
-                    //red
-                    color: '#E4A25A',
-                    marker: {
-                        radius: 2
-                    }
+                var newFinishedLine = {
+                    values: vm.finishedLine,
+                    key: 'Finished Line',
+                    color: '#AFEE7E'
                 };
 
-                var _finishedLine = {
-                    type: 'line',
-                    name: 'Done',
-                    //pointStart: $scope.period.startDate,
-                    data: vm.finishedLine,
-                    //pointInterval: 24*3600*1000,
-                    //green
-                    color: '#AFEE7E',
-                    marker: {
-                        radius: 3
-                    }
-                    //useUTC: false
-                };
+                var newBestLine = {
+                    values: vm.bestLine,
+                    key: 'Projected Scope',
+                    color: '#E4A25A'
+                }
 
-                console.log(_scopeLine);
-                //console.log(_progressLine);
-                console.log(_finishedLine);
-                console.log(_bestLine);
-
-                vm.chartConfig.series.push(_scopeLine);
-                //$scope.chartConfig.series.push(_progressLine);
-                vm.chartConfig.series.push(_finishedLine);
-                vm.chartConfig.series.push(_bestLine);
-
-
+                vm.data.push(newScopeLine);
+                vm.data.push(newFinishedLine);
+                vm.data.push(newBestLine);
             }).catch(function(e) {
 
                 //if(angular.equals(e, 'no info for board, is there a configuration card in the board?')) {
@@ -199,45 +148,6 @@
                 loadBoard();
             });
         }
-
-        vm.chartConfig = {
-            chart: {
-                zoomType: 'xy'
-            },
-            yAxis: [{
-                title: {
-                    text: 'Scope'
-                }
-            },{
-                title: {
-                    text: 'Scope'
-                },
-                opposite: true
-            }],
-            xAxis: {
-                type: 'datetime',
-                dateTimeLabelFormats: { // don't display the dummy year
-                    month: '%e. %b',
-                    year: '%b'
-                },
-                title: {
-                    text: 'Periode'
-                }
-            },
-            series: [ ],
-            title: {
-                text: 'Burn Up Chart'
-            },
-            legend: {
-                layout: 'vertical',
-                align: 'left',
-                x: 120,
-                verticalAlign: 'top',
-                y: 100,
-                floating: true,
-                backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-            }
-        };
 
         vm.accumulate = accumulate;
     }
