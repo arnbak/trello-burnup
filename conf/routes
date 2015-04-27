@@ -19,7 +19,7 @@ POST        /savekey                controllers.UserController.saveKey
 GET         /tokenform              controllers.UserController.tokenForm
 POST        /savetoken              controllers.UserController.saveToken
 
-GET         /accumulate             controllers.TrelloController.accumulateToday()
+GET         /accumulate             controllers.TrelloController.accumulateToday
 
 GET         /board/:id              controllers.BoardController.board(id: String)
 GET         /period/:boardId        controllers.TrelloController.period(boardId: String)
