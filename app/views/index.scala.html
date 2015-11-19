@@ -1,7 +1,7 @@
 @(info: models.PageInfo,
         user: Option[models.User] = None,
         authUrl: Option[String] = None,
-        member: Option[services.Member])(implicit flash: Flash)
+        member: Option[models.Member])(implicit flash: Flash)
 
 @main(info, user) {
 
@@ -12,8 +12,10 @@
 
                 <h3>This is your boards</h3>
                 <ul>
-                    @for(mBoard <- member.get.boards) {
-                        <li><a href="/board/@mBoard.id">@mBoard.name</a></li>
+                    @member.map { m =>
+                        @for(mBoard <- m.boards) {
+                            <li><a href="/board/@mBoard.id">@mBoard.name</a></li>
+                        }
                     }
                 </ul>
 
@@ -26,7 +28,7 @@
                 <ol>
                     <li>Sign in to trello here: <a href="http://trello.com" target="_blank">trello.com</a><small> (Opens a new window)</small></li>
                     <li>Call this url: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a> <small>(Copy the key to the clipboard)</small></li>
-                    <li>Save the developer key <a href="@routes.UserController.keyForm()">here</a></li>
+                    <li>Save the developer key <a href="@routes.Application.keyForm()">here</a></li>
 
                     @user.map { u =>
                         @u.key.map { key =>
@@ -36,7 +38,7 @@
 
                     @authUrl.map { url =>
                         <li>Authorize the app (this) <a href="@url" target="_blank">@url</a></li>
-                        <li>Save the token <a href="@routes.UserController.tokenForm()">here</a></li>
+                        <li>Save the token <a href="@routes.Application.tokenForm()">here</a></li>
                     }
 
                 </ol>

@@ -2,7 +2,7 @@ package models
 
 case class PageInfo(title: String, url: String)
 
-object PageInfo{
+object PageInfo {
 
   val default = PageInfo(
     "",

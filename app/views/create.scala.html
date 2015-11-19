@@ -1,4 +1,6 @@
-@(info: models.PageInfo, loginForm: Form[controllers.LoginController.LoginForm])(implicit flash: Flash)
+@(info: models.PageInfo, loginForm: Form[forms.LoginForm.Credentials])(implicit flash: Flash, messages: Messages)
+
+@import b3.vertical.fieldConstructor
 
 @main(info, None) {
 
@@ -6,7 +8,7 @@
         <div class="col-md-6">
             <h3>Create a user!</h3>
 
-            @helper.form(action = routes.LoginController.create()) {
+            @b3.form(action = routes.LoginController.create()) {
 
                 @loginForm.globalError.map { error =>
                     <p class="error">
@@ -14,10 +16,17 @@
                     </p>
                 }
 
-                @helper.inputText(loginForm("email"), '_label -> "Email", '_showConstraints -> false)
-                @helper.inputPassword(loginForm("password"), '_label -> "Password", '_showConstraints -> false)
+                @b3.text(loginForm("email"),
+                    '_label -> "Email",
+                    '_showConstraints -> false)
+                @b3.password(loginForm("password"),
+                    '_label -> "Password",
+                    '_showConstraints -> false)
 
-                <button type="submit">Create the user</button>
+                @b3.free() {
+                    <button type="submit" class="btn btn-default">Create the user</button>
+                }
+
             }
         </div>
         <div class="col-md-6">

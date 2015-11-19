@@ -11,7 +11,7 @@ It works by running a daily job, that sum the various points to be able to show 
 Usage
 -----
 
-Boards should ofcourse be created in Trello. Further more a configuration card should be added to each board for which a graph is needed. 
+Boards should ofcourse be created in Trello. Furthermore a configuration card should be added to each board for which a graph is needed. 
 
 The configuration card should contain two elements, which defines a start date and an end date. 
 
@@ -27,53 +27,3 @@ This will add the element in the scope count. A label of the color red or purple
 When a given element is being worked on, a blue label can be added to provide a in progress graph. 
 
 When a task is done, replace the in progress label with a green label. And it will count in the done task. 
-
-The application can be accessed at:
-
-```
-http://arnbak.com:9990
-```
-
-
-Developing
-----------
-
-Technically the frontend is written in AngularJS, with Bootstrap and to some degree play html templates. The backend is a scala based play framework application with a postgresql database. 
-
-The application is deployed at heroku. And can be accessed at the previously given url.
-
-All the code is in the GIT repository found here: 
-
-```
-https://github.com/arnbak/trello-burnup
-```
-
-####Getting started
-
-First of all, this is a play framework application. More info can be found here: http://www.playframework.com
-
-Start by cloning the repository
-
-```
-$ git clone git@github.com:arnbak/trello-burnup.git
-```
-
-Before running the backend part. Setup a database, and add the correct url in the ```conf/application.conf```
-
-Go into the play/activator console by typing 
-
-```$ activator ```
-
-Which gives the following output:
-
-```
-[info] Loading project definition from /Users/lars/Development/burnup-app/project
-[info] Set current project to burnup-app (in build file:/Users/lars/Development/burnup-app/)
-[burnup-app] $
-```
-
-Start the app with the ~run command:
-
-```
-[burnup-app] $ ~run
-```

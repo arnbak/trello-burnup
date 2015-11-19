@@ -1,122 +1,20 @@
 package services
 
-import java.util.Date
-
-import models.{BoardPeriods, DailyPoints, Period, Point}
-import org.joda.time.{Days, DateTime}
+import com.google.inject.{ Inject, Singleton }
+import models.{ Card, Member, Period, Point }
+import org.joda.time
+import org.joda.time.{ Days, DateTime }
 import org.joda.time.format.DateTimeFormat
 import play.Logger
 
 import play.api.http.Status
-
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
-import play.api.libs.ws.WS
 import play.api.Play.current
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
 
-import play.api.db.slick._
+import scala.concurrent.{ ExecutionContext, Future }
+import play.api.libs.ws.WS
 
-case class Member(id: String,
-                  fullName: String,
-                  initials: String,
-                  memberType: String,
-                  products: List[Int],
-                  url: String,
-                  username: String,
-                  gravatarHash: String,
-                  idBoards: List[String],
-                  idOrganizations: Option[List[String]],
-                  idBoardsPinned: Option[List[String]],
-                  boards: List[Board])
-
-object Member {
-
-  implicit val memberReads: Reads[Member] = (
-    (__ \ "id").read[String] and
-      (__ \ "fullName").read[String] and
-      (__ \ "initials").read[String] and
-      (__ \ "memberType").read[String] and
-      (__ \ "products").read[List[Int]] and
-      (__ \ "url").read[String] and
-      (__ \ "username").read[String] and
-      (__ \ "gravatarHash").read[String] and
-      (__ \ "idBoards").read[List[String]] and
-      (__ \ "idOrganizations").read[Option[List[String]]] and
-      (__ \ "idBoardsPinned").read[Option[List[String]]] and
-      (__ \ "boards").read[List[Board]]
-    )(Member.apply _)
-}
-
-case class Board(name: String,
-                 closed: Boolean,
-                 idOrganization: Option[String],
-                 pinned: Option[String],
-                 id: String)
-
-object Board {
-  implicit val boardReads: Reads[Board] = (
-    (__ \ "name").read[String] and
-      (__ \ "closed").read[Boolean] and
-      (__ \ "idOrganization").readNullable[String] and
-      (__ \ "pinned").readNullable[String] and
-      (__ \ "id").read[String]
-    )(Board.apply _)
-}
-
-case class Organization()
-
-case class Card (
-                  id: String,
-                  closed: Boolean,
-                  dateLastActivity: String,
-                  desc: String,
-                  name: String,
-                  idBoard: String,
-                  idList: String,
-                  idShort: Int,
-                  idLabels: List[String],
-                  labels: List[Label],
-                  shortUrl: String,
-                  url: String)
-
-object Card {
-  implicit val cardReads: Reads[Card] = (
-    (__ \ "id").read[String] and
-      (__ \ "closed").read[Boolean] and
-      (__ \ "dateLastActivity").read[String] and
-      (__ \ "desc").read[String] and
-      (__ \ "name").read[String] and
-      (__ \ "idBoard").read[String] and
-      (__ \ "idList").read[String] and
-      (__ \ "idShort").read[Int] and
-      (__ \ "idLabels").read[List[String]] and
-      (__ \ "labels").read[List[Label]] and
-      (__ \ "shortUrl").read[String] and
-      (__ \ "url").read[String]
-    )(Card.apply _)
-}
-
-case class Label(id: String,
-                 idBoard: String,
-                 name: String,
-                 color: String,
-                 uses: Int)
-
-object Label {
-  implicit val labelReads: Reads[Label] = (
-    (__ \ "id").read[String] and
-      (__ \ "idBoard").read[String] and
-      (__ \ "name").read[String] and
-      (__ \ "color").read[String] and
-      (__ \ "uses").read[Int]
-    )(Label.apply _)
-}
-
-
-object TrelloService {
+@Singleton
+class TrelloService @Inject() ()(implicit ec: ExecutionContext) {
 
   /**
    *
@@ -124,9 +22,14 @@ object TrelloService {
    * @return
    */
   def member(url: String): Future[Member] = {
+
     WS.url(url).get().flatMap { response =>
+
       response.status match {
-        case Status.OK => Future.successful(response.json.as[Member])
+        case Status.OK => {
+          Logger.info(s"Json Response ${response.json}")
+          Future.successful(response.json.as[Member])
+        }
       }
     }
   }
@@ -142,17 +45,16 @@ object TrelloService {
 
     val futures = boards.map { boardId =>
       val cardsUrl = s"https://api.trello.com/1/boards/$boardId/cards?key=$key&token=$token"
-      WS.url(cardsUrl).get().flatMap { response =>
-
+      WS.url(cardsUrl).get().map { response =>
         response.status match {
-          case Status.OK => Future.successful(response.json.as[List[Card]])
+          case Status.OK => response.json.as[List[Card]]
 
         }
       }
     }
 
     Future.sequence(futures)
-    
+
   }
 
   /**
@@ -179,15 +81,16 @@ object TrelloService {
     }
   }
 
-
   /**
    *
    * @param board
    * @return
    */
-  def summarizeInfo(board: List[Card]) : Map[models.Point, models.Period] = {
+  def summarizeInfo(board: List[Card]): Map[models.Point, models.Period] = {
 
     val result = board.groupBy(_.idBoard).map { boardCard =>
+
+      val (boardId, boardCardList) = boardCard
 
       var points: Int = 0
       var finished: Int = 0
@@ -197,7 +100,7 @@ object TrelloService {
       var endDate: Option[DateTime] = None
       val fmt = DateTimeFormat.forPattern("ddMMyyyy")
 
-      boardCard._2.map { card =>
+      boardCardList.map { card =>
         Logger.info("Card " + boardCard._1 + " card " + card.name)
 
         val startIndex: Int = card.name.indexOf("[")
@@ -212,15 +115,16 @@ object TrelloService {
             val intValue = name.toInt
             points = points + intValue
             card.labels.map {
-              label => {
-                if (label.color.equals("blue")) {
-                  progress = progress + intValue
-                } else if (label.color.equals("green")) {
-                  finished = finished + intValue
-                } else if (label.color.equals("purple") || label.color.equals("red")) {
-                  points = points - intValue
+              label =>
+                {
+                  if (label.color.equals("blue")) {
+                    progress = progress + intValue
+                  } else if (label.color.equals("green")) {
+                    finished = finished + intValue
+                  } else if (label.color.equals("purple") || label.color.equals("red")) {
+                    points = points - intValue
+                  }
                 }
-              }
             }
           } catch {
             case e: NumberFormatException => {
@@ -241,11 +145,9 @@ object TrelloService {
         eDate <- endDate
       } yield (sDate, eDate)
 
-
-      val pointForToday: Point = Point(None, boardCard._1, new Date(), points, progress, finished)
+      val pointForToday: Point = Point(-1, boardId, new time.DateTime(), points, progress, finished)
       val days: Option[Int] = Some(Days.daysBetween(validDates.get._1, validDates.get._2).getDays)
-      val boardPeriod: Period = Period(None, boardCard._1, validDates.get._1.toDate, validDates.get._2.toDate, days)
-
+      val boardPeriod: Period = Period(-1, boardId, validDates.get._1, validDates.get._2, days)
 
       (pointForToday, boardPeriod)
 

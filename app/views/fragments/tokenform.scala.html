@@ -1,19 +1,27 @@
-@(info: models.PageInfo, tokenForm: Form[controllers.UserController.UserToken], user: Option[models.User] = None)(implicit flash: Flash)
+@(info: models.PageInfo,
+        tokenForm: Form[forms.UserToken.UserToken],
+        user: Option[models.User] = None)(implicit flash: Flash, messages: Messages)
+
+@import b3.vertical.fieldConstructor
 
 @main(info, user) {
     <div class="row">
         <div class="col-md-6">
             <h4>Save the token!</h4>
-            @helper.form(action = routes.UserController.saveToken()) {
+            @b3.form(action = routes.Application.saveToken()) {
 
                 @tokenForm.globalError.map { error =>
                     <p class="error">
                         @error.message
                     </p>
                 }
-                @helper.inputText(tokenForm("token"), '_label -> "Token", '_showConstraints -> false)
+                @b3.text(tokenForm("token"),
+                    '_label -> "Token",
+                    '_showConstraints -> false)
 
-                <button type="submit">Save the token</button>
+                @b3.free() {
+                    <button type="submit" class="btn btn-default">Save the token</button>
+                }
             }
         </div>
         <div class="col-md-6">

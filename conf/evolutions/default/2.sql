@@ -1,5 +1,12 @@
 # --- !Ups
-create table "USERS" ("ID" BIGSERIAL,"EMAIL" VARCHAR(254) NOT NULL PRIMARY KEY,"USERNAME" VARCHAR(254),"PASSWORD" BYTEA NOT NULL,"APPKEY" VARCHAR(254),"APPTOKEN" VARCHAR(254));
+create table public.users (
+  id BIGSERIAL,
+  email VARCHAR(254) NOT NULL PRIMARY KEY,
+  username VARCHAR(254),
+  password BYTEA NOT NULL,
+  appkey VARCHAR(254),
+  apptoken VARCHAR(254)
+);
 
 # --- !Downs
-drop table "USERS";
+drop table public.users;

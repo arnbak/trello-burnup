@@ -1,109 +1,58 @@
 package controllers
+
+import com.google.inject.{ Inject, Singleton }
 import models._
 import org.apache.commons.math3.stat.regression.SimpleRegression
-import org.joda.time.{LocalDate, DateTime, Days}
-import org.joda.time.format.{DateTimeFormat}
+import org.joda.time.{ LocalDate, DateTime, Days }
+import play.Logger
 
-import play.{Logger}
 import play.api.libs.json._
 import play.api.mvc._
-
-import play.api.libs.ws._
-
-import play.api.db.slick._
-import play.api.db.slick.{Session => SlickSession}
-import play.api.Play.current
 import play.api.libs.json.Json._
-import services.TrelloService
+import services.{ UserService, BoardService, TrelloService }
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.concurrent.{ ExecutionContext, Future }
 
-object TrelloController extends Controller with Secured {
+@Singleton
+class TrelloController @Inject() (
+    trelloService: TrelloService,
+    boardService: BoardService,
+    userService: UserService)(implicit ec: ExecutionContext) extends Controller {
 
-  def accumulate = {
-
-    DB.withSession { implicit s: SlickSession =>
-      Users.listUsers.map { user =>
-
-        val boardUrl = (for {
-          key <- user.key
-          token <- user.token
-          if !token.isEmpty && !key.isEmpty
-        } yield (key, token)).map { v =>
-          s"https://api.trello.com/1/members/me?key=${v._1}&token=${v._2}&boards=all&organizations=all"
-        }
-
-        summarizeAndInsert(user.key, user.token, boardUrl)
-      }
-    }
+  def accumulateToday = Action { implicit request =>
+    Ok
+    //    DB.withSession { implicit s =>
+    //      Users.findByEmail(email).map { user =>
+    //        Logger.info("Found user")
+    //
+    //        val boardUrl = (for {
+    //          key <- user.key
+    //          token <- user.token
+    //          if !token.isEmpty && !key.isEmpty
+    //        } yield (key, token)).map { v =>
+    //          s"https://api.trello.com/1/members/me?key=${v._1}&token=${v._2}&boards=all&organizations=all"
+    //        }
+    //
+    //        summarizeAndInsert(user.key, user.token, boardUrl).flatMap { _ =>
+    //          Future.successful(Ok(Json.obj("message" -> s"accumulation triggered in the future")))
+    //        }
+    //
+    //      } getOrElse {
+    //        Future.successful(Unauthorized(Json.obj("message" -> s"Authorization nedded")))
+    //      }
+    //    }
   }
 
-  def summarizeAndInsert(key: Option[String], token: Option[String], boardUrl: Option[String]): Future[Any] = {
-    boardUrl.map { url =>
+  implicit val periodFormat = Json.format[Period]
 
-      (for {
-        member <- TrelloService.member(url)
-        info <- TrelloService.boardInfoFutures(key.get, token.get, member.idBoards)
-      } yield (info)).map { cardList =>
-        cardList.map { board =>
-
-          TrelloService.summarizeInfo(board).map { item =>
-
-            DB.withSession { implicit s: SlickSession =>
-              DailyPoints.insert(item._1)
-            }
-
-            DB.withSession { implicit s: SlickSession =>
-              BoardPeriods.insert(item._2)
-            }
-
-            Future.successful(item)
-          }
-        }
-      }
-    } getOrElse {
-      Future.successful("Nothing")
-    }
-  }
-
-
-  def accumulateToday = IsAuthedAsync { email => implicit request =>
-
-    DB.withSession { implicit s =>
-      Users.findByEmail(email).map { user =>
-        Logger.info("Found user")
-
-        val boardUrl = (for {
-          key <- user.key
-          token <- user.token
-          if !token.isEmpty && !key.isEmpty
-        } yield (key, token)).map { v =>
-          s"https://api.trello.com/1/members/me?key=${v._1}&token=${v._2}&boards=all&organizations=all"
-        }
-
-        summarizeAndInsert(user.key, user.token, boardUrl).flatMap { _ =>
-          Future.successful(Ok(Json.obj("message" -> s"accumulation triggered in the future")))
-        }
-
-      } getOrElse {
-        Future.successful(Unauthorized(Json.obj("message" -> s"Authorization nedded")))
-      }
-    }
-  }
-
-
-  implicit  val periodFormat = Json.format[Period]
-
-  def period(boardId: String) = IsAuthenticated { user => implicit request =>
-    val period: Option[Period] = BoardPeriods.periodByBoardId(boardId)
+  def period(boardId: String) = Action { implicit request =>
+    val period: Option[Period] = boardService.periodByBoardId(boardId) //BoardPeriods.periodByBoardId(boardId)
 
     period.map {
       r => Ok(Json.toJson(r))
     } getOrElse {
-      NotFound(Json.obj("message"-> ("no period found for boardid: " + boardId)))
+      NotFound(Json.obj("message" -> ("no period found for boardid: " + boardId)))
     }
   }
 
@@ -115,23 +64,22 @@ object TrelloController extends Controller with Secured {
 
     implicit object LineElementFormat extends Format[LineElement] {
 
-      def reads(json: JsValue) : JsSuccess[LineElement] = {
+      def reads(json: JsValue): JsSuccess[LineElement] = {
 
         val arr = json.as[JsArray]
 
-        JsSuccess(LineElement(arr(0).as[Long],arr(1).as[Double]))
+        JsSuccess(LineElement(arr(0).as[Long], arr(1).as[Double]))
       }
 
-      def writes(l: LineElement) : JsValue = {
+      def writes(l: LineElement): JsValue = {
         JsArray(Seq(JsNumber(l.x), JsNumber(l.y)))
       }
     }
   }
 
+  def series(boardId: String) = Action { implicit request =>
 
-  def series(boardId: String) = IsAuthenticated { user => implicit request =>
-
-    val period: Option[Period] = BoardPeriods.periodByBoardId(boardId)
+    val period: Option[Period] = boardService.periodByBoardId(boardId)
 
     period.map { p =>
 
@@ -139,7 +87,7 @@ object TrelloController extends Controller with Secured {
       val finishedLine: List[Seq[Long]] = createFinishedLine(p)
       val bestLine: List[LineElement] = createBestLine(p, finishedLine)
 
-      Ok(Json.obj("scopeLine" -> toJson(scopeLine),  "finishedLine" -> toJson(finishedLine), "bestLine" -> toJson(bestLine)))
+      Ok(Json.obj("scopeLine" -> toJson(scopeLine), "finishedLine" -> toJson(finishedLine), "bestLine" -> toJson(bestLine)))
 
     }.getOrElse {
       NotFound(Json.obj("message" -> ("no series found for boardid: " + boardId)))
@@ -147,9 +95,7 @@ object TrelloController extends Controller with Secured {
 
   }
 
-
-
-  private def createBestLine(p: Period, finishedLine: List[Seq[Long]])(implicit s: SlickSession): List[LineElement] = {
+  private def createBestLine(p: Period, finishedLine: List[Seq[Long]]): List[LineElement] = {
 
     val regression = new SimpleRegression
 
@@ -175,7 +121,7 @@ object TrelloController extends Controller with Secured {
 
   }
 
-  private def createFinishedLine(p: Period)(implicit s: SlickSession): List[Seq[Long]] = {
+  private def createFinishedLine(p: Period): List[Seq[Long]] = {
     val line = new ListBuffer[Seq[Long]]
 
     var finishedVal: Int = 0
@@ -183,35 +129,33 @@ object TrelloController extends Controller with Secured {
     for (i <- 0 to p.periodInDayes.get) {
       val day = new LocalDate(p.startDate).plusDays(i)
 
-      val point: Option[Point] = DailyPoints.pointForDay(p.boardId, day)
+      val point: Option[Point] = boardService.pointForDay(p.boardId, day)
 
       point.map { p =>
-        line += Seq(day.toDateTimeAtStartOfDay.getMillis, p.finished)
         finishedVal = p.finished
-      }.getOrElse{
-        if(finishedVal == 0) line += Seq(day.toDateTimeAtStartOfDay.getMillis, 0)
+        line += Seq(day.toDateTimeAtStartOfDay.getMillis, p.finished)
+      }.getOrElse {
+        if (finishedVal == 0) line += Seq(day.toDateTimeAtStartOfDay.getMillis, 0)
       }
     }
 
     line.toList
   }
 
-
-
-  private def createScopeLine(p: Period)(implicit s: SlickSession): List[Seq[Long]] = {
+  private def createScopeLine(p: Period): List[Seq[Long]] = {
     var line = new ListBuffer[Seq[Long]]
     var scopeVal: Int = 0
 
     for (i <- 0 to p.periodInDayes.get) {
       val day = new LocalDate(p.startDate).plusDays(i)
 
-      val point: Option[Point] = DailyPoints.pointForDay(p.boardId, day)
+      val point: Option[Point] = boardService.pointForDay(p.boardId, day)
 
       point.map { r =>
-        line += Seq(day.toDateTimeAtStartOfDay.getMillis, r.scope)
         scopeVal = r.scope
+        line += Seq(day.toDateTimeAtStartOfDay.getMillis, r.scope)
       }.getOrElse {
-        line += Seq(day.toDateTimeAtStartOfDay.getMillis,scopeVal)
+        line += Seq(day.toDateTimeAtStartOfDay.getMillis, scopeVal)
       }
     }
 
