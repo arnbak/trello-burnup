@@ -30,11 +30,6 @@
                     <li>Call this url: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a> <small>(Copy the key to the clipboard)</small></li>
                     <li>Save the developer key <a href="@routes.Application.keyForm()">here</a></li>
 
-                    @user.map { u =>
-                        @u.key.map { key =>
-
-                        }
-                    }
 
                     @authUrl.map { url =>
                         <li>Authorize the app (this) <a href="@url" target="_blank">@url</a></li>

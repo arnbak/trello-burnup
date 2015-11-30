@@ -1,4 +1,6 @@
-@(info: models.PageInfo, loginForm: Form[forms.LoginForm.Credentials])(implicit flash: Flash, messages: Messages)
+@(info: models.PageInfo,
+        loginForm: Form[forms.LoginForm.Credentials],
+        socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry)(implicit flash: Flash, messages: Messages, request: RequestHeader)
 
 @import b3.vertical.fieldConstructor
 
@@ -9,6 +11,7 @@
             <h3>Create a user!</h3>
 
             @b3.form(action = routes.LoginController.create()) {
+                @helper.CSRF.formField
 
                 @loginForm.globalError.map { error =>
                     <p class="error">
@@ -35,7 +38,25 @@
                     <strong>Creation error!</strong> @message
                 </div>
             }
+
+            @if(socialProviders.providers.nonEmpty) {
+                <div class="social-providers">
+                    <p>@Messages("or.use.social")</p>
+                    <div>
+                    @for(p <- socialProviders.providers if p.id != "clef") {
+                        <a href="@routes.SocialAuthController.authenticate(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@routes.Assets.versioned(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)"></a>
+                    }
+                    </div>
+                    @*@defining(socialProviders.get[ClefProvider]) { clef =>*@
+                        @*@if(clef.isDefined) {*@
+                            @*<script type="text/javascript" src="https://clef.io/v3/clef.js" class="clef-button" data-app-id="@clef.get.settings.clientID" data-color="blue" data-style="flat" data-redirect-url="@clef.get.settings.redirectURL" data-type="login"></script>*@
+                        @*}*@
+                    @*}*@
+                </div>
+            }
         </div>
+
+
 
     </div>
 

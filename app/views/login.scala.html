@@ -1,4 +1,6 @@
-@(info: models.PageInfo, loginForm: Form[forms.LoginForm.Credentials])(implicit flash: Flash, messages: Messages)
+@(info: models.PageInfo,
+        loginForm: Form[forms.LoginForm.Credentials],
+        socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry)(implicit request: RequestHeader, flash: Flash, messages: Messages)
 
 @import b3.vertical.fieldConstructor
 
@@ -8,27 +10,37 @@
 
         <div class="col-md-6">
 
-            <h3>Sign in <small>...with your email address</small></h3>
+            <h3>Velkommen <small>Log ind med din Trello konto</small></h3>
 
-            @b3.form(action = routes.LoginController.login()) {
-
-                @loginForm.globalError.map { error =>
-                    <p class="error">
-                        @error.message
-                    </p>
-                }
-
-                @b3.text(loginForm("email"),
-                    '_label -> "Email",
-                    '_showConstraints -> false)
-                @b3.password(loginForm("password"),
-                    '_label -> "Password",
-                    '_showConstraints -> false)
-
-                @b3.free() {
-                    <button type="submit" class="btn btn-default">Log ind</button>
-                }
+            @if(socialProviders.providers.nonEmpty) {
+                <div class="social-providers">
+                    <div>
+                    @for(p <- socialProviders.providers if p.id != "clef") {
+                        <a href="@routes.SocialAuthController.authenticate(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@routes.Assets.versioned(s"images/providers/${p.id}.png")" width="256px" height="78px" alt="@Messages(p.id)"></a>
+                    }
+                    </div>
+                </div>
             }
+
+            @*@b3.form(action = routes.LoginController.login()) {*@
+
+                @*@loginForm.globalError.map { error =>*@
+                    @*<p class="error">*@
+                        @*@error.message*@
+                    @*</p>*@
+                @*}*@
+
+                @*@b3.text(loginForm("email"),*@
+                    @*'_label -> "Email",*@
+                    @*'_showConstraints -> false)*@
+                @*@b3.password(loginForm("password"),*@
+                    @*'_label -> "Password",*@
+                    @*'_showConstraints -> false)*@
+
+                @*@b3.free() {*@
+                    @*<button type="submit" class="btn btn-default">Log ind</button>*@
+                @*}*@
+            @*}*@
 
 
 
@@ -51,7 +63,7 @@
 
             <blockquote>
                 <p>
-                    <small>To use the system, you need a user. Create one <a href="@routes.LoginController.createPage()">here</a></small>
+                    <small>To use the system, you need a trello account. Create one <a href="http://trello.com">here</a></small>
                 </p>
             </blockquote>
 
