@@ -18,13 +18,13 @@ class AccumulationActor @Inject() (userService: UserService, trelloService: Trel
   import AccumulationActor._
   import context._
 
-  val schedule = system.scheduler.schedule(600.milliseconds, 5.hours, self, Accumulate)
+  val schedule = system.scheduler.schedule(6.minutes, 5.hours, self, Accumulate)
 
   def receive = {
 
     case Accumulate => {
       Logger.info("Accumulate")
-      accumulate()
+      //accumulate()
     }
 
     case _ => Logger.info("Unhandled Message")

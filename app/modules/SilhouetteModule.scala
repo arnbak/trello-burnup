@@ -96,10 +96,13 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The Silhouette environment.
    */
   @Provides
-  def provideSocialProviderRegistry(trelloProvider: TrelloProvider): SocialProviderRegistry = {
+  def provideSocialProviderRegistry(trelloProvider: TrelloProvider, googleProvider: GoogleProvider, twitterProvider: TwitterProvider): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-      trelloProvider
+
+      trelloProvider,
+      googleProvider,
+      twitterProvider
     ))
   }
 

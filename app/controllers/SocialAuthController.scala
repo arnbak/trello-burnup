@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.mohiva.play.silhouette.api.Logger
 import services.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
@@ -27,12 +28,11 @@ import scala.concurrent.Future
  * @param socialProviderRegistry The social provider registry.
  */
 class SocialAuthController @Inject() (
-  val messagesApi: MessagesApi,
-  val env: Environment[User, CookieAuthenticator],
-  userService: UserService,
-  authInfoRepository: AuthInfoRepository,
-  socialProviderRegistry: SocialProviderRegistry)
-    extends Silhouette[User, CookieAuthenticator] with Logger {
+    val messagesApi: MessagesApi,
+    val env: Environment[User, CookieAuthenticator],
+    userService: UserService,
+    authInfoRepository: AuthInfoRepository,
+    socialProviderRegistry: SocialProviderRegistry) extends Silhouette[User, CookieAuthenticator] with Logger {
 
   /**
    * Authenticates a user against a social provider.
@@ -44,7 +44,8 @@ class SocialAuthController @Inject() (
     (socialProviderRegistry.get[SocialProvider](provider) match {
       case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
         p.authenticate().flatMap {
-          case Left(result) => Future.successful(result)
+          case Left(result) =>
+            Future.successful(result)
           case Right(authInfo) => for {
             profile <- p.retrieveProfile(authInfo)
             user <- userService.save(profile)

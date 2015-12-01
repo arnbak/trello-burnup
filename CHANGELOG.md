@@ -1,8 +1,8 @@
 #0.0.2 - A little update
 
-- Updated from Play 2.3.x to 2.4.x
-- Refactored the code a bit to accommodate di in play 2.4
+- Updated from Play 2.3.x to 2.4.x (Which meant some refactoring of the code)
 - Restructured the db model
+- Added the play-silhouette plugin, for authendicating against the trello api (custom provider)
 
 ##Breaking changes
 

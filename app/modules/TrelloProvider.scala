@@ -30,9 +30,9 @@ import play.api.libs.json._
 import scala.concurrent.Future
 
 /**
- * Base Tello OAuth1 Provider.
+ * Base Trello OAuth1 Provider.
  *
- * @see https://dev.xing.com/docs/get/users/me
+ * @see https://developers.trello.com/advanced-reference/member
  * @see https://dev.xing.com/docs/error_responses
  */
 //TODO fix paths to trello json responses
@@ -92,8 +92,8 @@ class TrelloProfileParser extends SocialProfileParser[JsValue, CommonSocialProfi
 
     //val users = (json \ "users").as[Seq[JsObject]].head
     val userID = (json \ "id").as[String]
-    val firstName = (json \ "first_name").asOpt[String]
-    val lastName = (json \ "last_name").asOpt[String]
+    val firstName = (json \ "fullName").asOpt[String]
+    val lastName = (json \ "fullName").asOpt[String]
     val fullName = (json \ "fullName").asOpt[String]
     val avatarURL = (json \ "url").asOpt[String]
     val email = (json \ "email").asOpt[String]
@@ -109,7 +109,7 @@ class TrelloProfileParser extends SocialProfileParser[JsValue, CommonSocialProfi
 }
 
 /**
- * The Xing OAuth1 Provider.
+ * The Trello OAuth1 Provider.
  *
  * @param httpLayer The HTTP layer implementation.
  * @param service The OAuth1 service implementation.
@@ -158,5 +158,6 @@ object TrelloProvider {
    * The Trello constants.
    */
   val ID = "trello"
-  val API = "https://api.trello.com/1/members/me?fields=username,email,fullName,url&boards=all&board_fields=name&organizations=all&organization_fields=displayName"
+
+  val API = "https://api.trello.com/1/members/me?fields=id,avatarHash,bio,fullName,initials,memberType,url,username,avatarSource,email" // ?fields=username,email,fullName,url&boards=all&board_fields=name&organizations=all&organization_fields=displayName"
 }

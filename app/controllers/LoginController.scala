@@ -11,12 +11,10 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import forms.LoginForm
 import models.{ User, PageInfo }
 
-import play.api.i18n.{ MessagesApi, I18nSupport }
+import play.api.i18n.MessagesApi
 
 import play.api.mvc._
 import services.UserService
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class LoginController @Inject() (

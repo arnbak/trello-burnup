@@ -2,23 +2,13 @@
 
 create table public.users (
   userId TEXT PRIMARY KEY,
+  providerid TEXT NOT NULL,
+  providerkey TEXT NOT NULL,
   firstName TEXT,
   lastName TEXT,
   fullName TEXT,
   email TEXT,
   avatarURL TEXT
-);
-
-
-create table public.logininfo (
-  id BIGSERIAL PRIMARY KEY,
-  providerId TEXT,
-  providerKey TEXT
-);
-
-create table public.userlogininfo (
-  userId TEXT,
-  loginInfoId BIGINT
 );
 
 create table public.passwordinfo (
@@ -55,10 +45,11 @@ create table public.openidattributes(
   value TEXT
 );
 
+
+
 # --- !Downs
 drop table public.users;
-drop table public.logininfo;
-drop table public.userlogininfo;
+drop table public.passwordinfo;
 drop table public.oauth1info;
 drop table public.oauth2info;
 drop table public.openidinfo;
