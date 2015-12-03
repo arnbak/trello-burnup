@@ -1,8 +1,5 @@
 language: scala
 scala:
   - 2.11.7
-before_install:
-  - gem install sass
-  - gem install compass
 script:
   - sbt stage

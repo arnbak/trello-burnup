@@ -34,7 +34,6 @@ import scala.concurrent.Future
  * Base Trello OAuth1 Provider.
  *
  * @see https://developers.trello.com/advanced-reference/member
- * @see https://dev.xing.com/docs/error_responses
  */
 //TODO fix paths to trello json responses
 trait BaseTrelloProvider extends OAuth1Provider {
@@ -90,14 +89,12 @@ class TrelloProfileParser extends SocialProfileParser[JsValue, CommonSocialProfi
    */
   override def parse(json: JsValue) = Future.successful {
 
-    //Logger.info("Json " + json)
 
-    //val users = (json \ "users").as[Seq[JsObject]].head
     val userID = (json \ "id").as[String]
     val firstName = (json \ "fullName").asOpt[String]
     val lastName = (json \ "fullName").asOpt[String]
     val fullName = (json \ "fullName").asOpt[String]
-    val avatarURL = (json \ "avatarHash").asOpt[String].map { hash => s"http://gravatar.com/avatar/$hash" }
+    val avatarURL = (json \ "avatarHash").asOpt[String]
     val email = (json \ "email").asOpt[String]
 
     CommonSocialProfile(
@@ -160,7 +157,5 @@ object TrelloProvider {
    */
   val ID = "trello"
 
-  val API = "https://api.trello.com/1/members/me?fields=id,avatarHash,bio,fullName,initials,memberType,url,username,avatarSource,email" // ?fields=username,email,fullName,url&boards=all&board_fields=name&organizations=all&organization_fields=displayName"
-
-  val BOARDS = "https://api.trello.com/1/members/me?boards=all&organizations=all"
+  val API = "https://api.trello.com/1/members/me?fields=id,avatarHash,bio,fullName,initials,memberType,url,username,avatarSource,email"
 }

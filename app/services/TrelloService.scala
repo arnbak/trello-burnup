@@ -44,7 +44,9 @@ class TrelloServiceImpl @Inject() (WS: WSClient, httpLayer: HTTPLayer, oAuth1Inf
             case _ => Future.failed(new Exception(s"Status from trello api ${response.status}"))
           }
         }
-      }.get
+      }.getOrElse {
+        Future.failed(new Exception("No login info was found"))
+      }
     }
   }
 
