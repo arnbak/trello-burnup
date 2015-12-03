@@ -5,11 +5,6 @@
 GET         /                              @controllers.Application.dashboard
 GET         /dashboard                     @controllers.Application.dashboard
 
-GET         /keyform                       @controllers.Application.keyForm
-POST        /savekey                       @controllers.Application.saveKey
-
-GET         /tokenform                     @controllers.Application.tokenForm
-POST        /savetoken                     @controllers.Application.saveToken
 GET         /profile                       @controllers.Application.profile
 
 GET         /create                        @controllers.LoginController.createPage
@@ -21,8 +16,6 @@ GET         /board/:id                     @controllers.Application.board(id: St
 
 GET         /period/:boardId               @controllers.TrelloController.period(boardId: String)
 GET         /series/:boardId               @controllers.TrelloController.series(boardId: String)
-
-
 
 GET         /login                         @controllers.LoginController.loginPage
 POST        /login                         @controllers.LoginController.login

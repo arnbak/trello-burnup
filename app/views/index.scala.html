@@ -1,51 +1,26 @@
-@(info: models.PageInfo,
-        user: Option[models.User] = None,
-        authUrl: Option[String] = None,
-        member: Option[models.Member])(implicit flash: Flash)
+@(info: models.PageInfo, user: Option[models.User] = None, memberInfo: Option[models.Member])
 
 @main(info, user) {
 
     <div class="row">
         <div class="col-md-6">
-            @member.map { board =>
-                <h2>Welcome @board.fullName</h2>
 
-                <h3>This is your boards</h3>
+            @memberInfo.map { m =>
+                <h2>Welcome @m.fullName</h2>
+
                 <ul>
-                    @member.map { m =>
-                        @for(mBoard <- m.boards) {
-                            <li><a href="/board/@mBoard.id">@mBoard.name</a></li>
-                        }
+                    @m.boards.map { board  =>
+                        <li><a href="@routes.Application.board(board.id)">@board.name</a></li>
                     }
                 </ul>
-
             }.getOrElse {
-
-                <h4>No Trello developer key and token exists for this user.</h4>
-
-                <small>We need to add these to your user.</small>
-
-                <ol>
-                    <li>Sign in to trello here: <a href="http://trello.com" target="_blank">trello.com</a><small> (Opens a new window)</small></li>
-                    <li>Call this url: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a> <small>(Copy the key to the clipboard)</small></li>
-                    <li>Save the developer key <a href="@routes.Application.keyForm()">here</a></li>
-
-
-                    @authUrl.map { url =>
-                        <li>Authorize the app (this) <a href="@url" target="_blank">@url</a></li>
-                        <li>Save the token <a href="@routes.Application.tokenForm()">here</a></li>
-                    }
-
-                </ol>
+                <h4>Issues loading trello information</h4>
             }
+
         </div>
 
         <div class="col-md-6">
-            @flash.get("success").map { message =>
-                <div class="alert alert-success" role="alert">
-                    <strong>Success!</strong> @message
-                </div>
-            }
+
         </div>
 
     </div>

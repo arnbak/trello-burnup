@@ -23,8 +23,9 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
+
 import modules.TrelloProvider._
-import play.api.Logger
+
 import play.api.libs.json._
 
 import scala.concurrent.Future
@@ -60,9 +61,10 @@ trait BaseTrelloProvider extends OAuth1Provider {
    * @return On success the build social profile, otherwise a failure.
    */
   override protected def buildProfile(authInfo: OAuth1Info): Future[Profile] = {
+
     httpLayer.url(urls("api")).sign(service.sign(authInfo)).get().flatMap { response =>
 
-      Logger.info("Response " + response.statusText)
+      //      Logger.info("Response " + response.statusText)
       val json = response.json
       (json \ "error_name").asOpt[String] match {
         case Some(error) =>
@@ -88,14 +90,14 @@ class TrelloProfileParser extends SocialProfileParser[JsValue, CommonSocialProfi
    */
   override def parse(json: JsValue) = Future.successful {
 
-    Logger.info("Json " + json)
+    //Logger.info("Json " + json)
 
     //val users = (json \ "users").as[Seq[JsObject]].head
     val userID = (json \ "id").as[String]
     val firstName = (json \ "fullName").asOpt[String]
     val lastName = (json \ "fullName").asOpt[String]
     val fullName = (json \ "fullName").asOpt[String]
-    val avatarURL = (json \ "url").asOpt[String]
+    val avatarURL = (json \ "avatarHash").asOpt[String].map { hash => s"http://gravatar.com/avatar/$hash" }
     val email = (json \ "email").asOpt[String]
 
     CommonSocialProfile(
@@ -117,11 +119,10 @@ class TrelloProfileParser extends SocialProfileParser[JsValue, CommonSocialProfi
  * @param settings The OAuth1 provider settings.
  */
 class TrelloProvider(
-  protected val httpLayer: HTTPLayer,
-  protected val service: OAuth1Service,
-  protected val tokenSecretProvider: OAuth1TokenSecretProvider,
-  val settings: OAuth1Settings)
-    extends BaseTrelloProvider with CommonSocialProfileBuilder {
+    protected val httpLayer: HTTPLayer,
+    protected val service: OAuth1Service,
+    protected val tokenSecretProvider: OAuth1TokenSecretProvider,
+    val settings: OAuth1Settings) extends BaseTrelloProvider with CommonSocialProfileBuilder {
 
   /**
    * The type of this class.
@@ -160,4 +161,6 @@ object TrelloProvider {
   val ID = "trello"
 
   val API = "https://api.trello.com/1/members/me?fields=id,avatarHash,bio,fullName,initials,memberType,url,username,avatarSource,email" // ?fields=username,email,fullName,url&boards=all&board_fields=name&organizations=all&organization_fields=displayName"
+
+  val BOARDS = "https://api.trello.com/1/members/me?boards=all&organizations=all"
 }

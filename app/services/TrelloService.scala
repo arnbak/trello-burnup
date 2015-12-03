@@ -1,46 +1,53 @@
 package services
 
-import com.google.inject.{ Inject, Singleton }
-import models.{ Card, Member, Period, Point }
+import javax.inject.Inject
+
+import com.google.inject.ImplementedBy
+import com.mohiva.play.silhouette.api.util.HTTPLayer
+import com.mohiva.play.silhouette.impl.providers._
+import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
+import models._
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.joda.time
 import org.joda.time.{ Days, DateTime }
 import org.joda.time.format.DateTimeFormat
 import play.Logger
+import play.api.Configuration
 
 import play.api.http.Status
-import play.api.Play.current
 
-import scala.concurrent.{ ExecutionContext, Future }
-import play.api.libs.ws.WS
+import scala.concurrent.Future
+import play.api.libs.ws.WSClient
 
-@Singleton
-class TrelloService @Inject() ()(implicit ec: ExecutionContext) {
+import scala.concurrent.ExecutionContext.Implicits._
 
-  /**
-   *
-   * @param url
-   * @return
-   */
-  def member(url: String): Future[Member] = {
+@ImplementedBy(classOf[TrelloServiceImpl])
+trait TrelloService {
+  def member(user: User): Future[Member]
+}
 
-    WS.url(url).get().flatMap { response =>
+class TrelloServiceImpl @Inject() (WS: WSClient, httpLayer: HTTPLayer, oAuth1InfoDAO: OAuth1InfoDAO, configuration: Configuration) extends TrelloService {
 
-      response.status match {
-        case Status.OK => {
-          Logger.info(s"Json Response ${response.json}")
-          Future.successful(response.json.as[Member])
+  val settings = configuration.underlying.as[OAuth1Settings]("silhouette.trello")
+
+  val oauthService = new PlayOAuth1Service(settings)
+
+  def member(user: User): Future[Member] = {
+
+    oAuth1InfoDAO.find(user.loginInfo).flatMap { infoOpt =>
+      infoOpt.map { info =>
+        httpLayer.url(s"https://api.trello.com/1/members/me?boards=all&organizations=all").sign(oauthService.sign(info)).get().flatMap { response =>
+
+          response.status match {
+            case Status.OK => Future.successful(response.json.as[Member])
+            case _ => Future.failed(new Exception(s"Status from trello api ${response.status}"))
+          }
         }
-      }
+      }.get
     }
   }
 
-  /**
-   *
-   * @param key
-   * @param token
-   * @param boards
-   * @return
-   */
   def boardInfoFutures(key: String, token: String, boards: List[String]): Future[List[List[Card]]] = {
 
     val futures = boards.map { boardId =>
@@ -57,13 +64,6 @@ class TrelloService @Inject() ()(implicit ec: ExecutionContext) {
 
   }
 
-  /**
-   *
-   * @param key
-   * @param token
-   * @param member
-   * @return
-   */
   def boardInfo(key: String, token: String, member: Member): Future[List[List[Card]]] = {
 
     val cardFutures = member.boards.map { board =>

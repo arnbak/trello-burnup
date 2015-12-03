@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Logger
+import com.mohiva.play.silhouette.api.services.AvatarService
 import services.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
@@ -32,6 +33,7 @@ class SocialAuthController @Inject() (
     val env: Environment[User, CookieAuthenticator],
     userService: UserService,
     authInfoRepository: AuthInfoRepository,
+    avatarService: AvatarService,
     socialProviderRegistry: SocialProviderRegistry) extends Silhouette[User, CookieAuthenticator] with Logger {
 
   /**
@@ -41,6 +43,17 @@ class SocialAuthController @Inject() (
    * @return The result to display.
    */
   def authenticate(provider: String) = Action.async { implicit request =>
+
+    def fetchAvatarImage(profile: CommonSocialProfile): Future[CommonSocialProfile] = {
+      profile.email.map { email =>
+        avatarService.retrieveURL(email).map { urlOpt =>
+          profile.copy(avatarURL = urlOpt)
+        }
+      } getOrElse {
+        Future.successful(profile)
+      }
+    }
+
     (socialProviderRegistry.get[SocialProvider](provider) match {
       case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
         p.authenticate().flatMap {
@@ -48,7 +61,8 @@ class SocialAuthController @Inject() (
             Future.successful(result)
           case Right(authInfo) => for {
             profile <- p.retrieveProfile(authInfo)
-            user <- userService.save(profile)
+            profileWithAvatar <- fetchAvatarImage(profile)
+            user <- userService.save(profileWithAvatar)
             authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
             authenticator <- env.authenticatorService.create(profile.loginInfo)
             value <- env.authenticatorService.init(authenticator)

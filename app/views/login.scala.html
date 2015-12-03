@@ -22,28 +22,6 @@
                 </div>
             }
 
-            @*@b3.form(action = routes.LoginController.login()) {*@
-
-                @*@loginForm.globalError.map { error =>*@
-                    @*<p class="error">*@
-                        @*@error.message*@
-                    @*</p>*@
-                @*}*@
-
-                @*@b3.text(loginForm("email"),*@
-                    @*'_label -> "Email",*@
-                    @*'_showConstraints -> false)*@
-                @*@b3.password(loginForm("password"),*@
-                    @*'_label -> "Password",*@
-                    @*'_showConstraints -> false)*@
-
-                @*@b3.free() {*@
-                    @*<button type="submit" class="btn btn-default">Log ind</button>*@
-                @*}*@
-            @*}*@
-
-
-
         </div>
 
         <div class="col-md-6">

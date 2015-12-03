@@ -96,13 +96,10 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The Silhouette environment.
    */
   @Provides
-  def provideSocialProviderRegistry(trelloProvider: TrelloProvider, googleProvider: GoogleProvider, twitterProvider: TwitterProvider): SocialProviderRegistry = {
+  def provideSocialProviderRegistry(trelloProvider: TrelloProvider): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-
-      trelloProvider,
-      googleProvider,
-      twitterProvider
+      trelloProvider
     ))
   }
 
@@ -282,8 +279,11 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   def provideTrelloProvider(
     httpLayer: HTTPLayer,
     tokenSecretProvider: OAuth1TokenSecretProvider,
+    avatarProvider: AvatarService,
     configuration: Configuration): TrelloProvider = {
+
     val settings = configuration.underlying.as[OAuth1Settings]("silhouette.trello")
+
     new TrelloProvider(httpLayer, new PlayOAuth1Service(settings), tokenSecretProvider, settings)
   }
 

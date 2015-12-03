@@ -3,7 +3,6 @@ package services
 import java.util.UUID
 import javax.inject.Inject
 
-import akka.event.Logging
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.User
 import play.api.Logger
@@ -13,8 +12,6 @@ import scala.concurrent.Future
 
 import anorm.SqlParser._
 import anorm._
-
-import scala.util.{ Failure, Try }
 
 trait UserDAO {
 

@@ -19,10 +19,10 @@ create table public.passwordinfo (
 );
 
 create table public.oauth1info (
-  id BIGINT PRIMARY KEY ,
-  token TEXT,
-  secret TEXT,
-  loginInfoId BIGINT
+  providerid TEXT NOT NULL,
+  providerkey TEXT NOT NULL,
+  token TEXT NOT NULL,
+  secret TEXT NOT NULL
 );
 
 create table public.oauth2info (

@@ -1,21 +1,28 @@
 package services
 
+import javax.inject.Inject
+
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers.OAuth1Info
-import play.api.Logger
-import services.OAuth1InfoDAO._
+import play.api.db.Database
+
+import anorm.SqlParser._
+import anorm._
+
 import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.collection.mutable
 import scala.concurrent.Future
 
-/**
- * The DAO to store the OAuth1 information.
- *
- * Note: Not thread safe, demo only.
- */
-class OAuth1InfoDAO extends DelegableAuthInfoDAO[OAuth1Info] {
+class OAuth1InfoDAO @Inject() (db: Database) extends DelegableAuthInfoDAO[OAuth1Info] {
+
+  private val oAuth1InfoParser = {
+    get[String]("token") ~
+      get[String]("secret") map {
+        case token ~ secret => OAuth1Info(token, secret)
+      }
+  }
 
   /**
    * Finds the auth info which is linked with the specified login info.
@@ -24,7 +31,11 @@ class OAuth1InfoDAO extends DelegableAuthInfoDAO[OAuth1Info] {
    * @return The retrieved auth info or None if no auth info could be retrieved for the given login info.
    */
   def find(loginInfo: LoginInfo): Future[Option[OAuth1Info]] = {
-    Future.successful(data.get(loginInfo))
+    Future.successful {
+      db.withConnection { implicit c =>
+        SQL"SELECT token,secret FROM public.oauth1info WHERE providerid=${loginInfo.providerID} AND providerkey=${loginInfo.providerKey}".as(oAuth1InfoParser.singleOpt)
+      }
+    }
   }
 
   /**
@@ -36,9 +47,13 @@ class OAuth1InfoDAO extends DelegableAuthInfoDAO[OAuth1Info] {
    */
   def add(loginInfo: LoginInfo, authInfo: OAuth1Info): Future[OAuth1Info] = {
 
-    Logger.info(s"authInfo $authInfo")
-    data += (loginInfo -> authInfo)
-    Future.successful(authInfo)
+    Future.successful {
+      db.withConnection { implicit c =>
+        SQL"""INSERT INTO public.oauth1info (providerid,providerkey,token,secret) VALUES (${loginInfo.providerID},${loginInfo.providerKey},${authInfo.token},${authInfo.secret})""".executeInsert()
+      }
+
+      authInfo
+    }
   }
 
   /**
@@ -49,8 +64,17 @@ class OAuth1InfoDAO extends DelegableAuthInfoDAO[OAuth1Info] {
    * @return The updated auth info.
    */
   def update(loginInfo: LoginInfo, authInfo: OAuth1Info): Future[OAuth1Info] = {
-    data += (loginInfo -> authInfo)
-    Future.successful(authInfo)
+
+    Future.successful {
+      db.withConnection { implicit c =>
+        SQL"""
+          UPDATE public.oauth1info
+          SET token=${authInfo.token},secret=${authInfo.secret}
+          WHERE providerid=${loginInfo.providerID} AND providerkey=${loginInfo.providerKey}
+        """
+      }
+      authInfo
+    }
   }
 
   /**
@@ -77,8 +101,13 @@ class OAuth1InfoDAO extends DelegableAuthInfoDAO[OAuth1Info] {
    * @return A future to wait for the process to be completed.
    */
   def remove(loginInfo: LoginInfo): Future[Unit] = {
-    data -= loginInfo
-    Future.successful(())
+
+    Future.successful {
+      db.withConnection { implicit c =>
+        SQL"""DELETE FROM public.oauth1info WHERE providerid=${loginInfo.providerID} AND providerkey=${loginInfo.providerKey}"""
+      }
+    }
+
   }
 }
 
