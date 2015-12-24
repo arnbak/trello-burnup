@@ -64,4 +64,8 @@ class UserServiceImpl @Inject() (userDAO: UserDAO) extends UserService {
         ))
     }
   }
+
+  def allUsers(): Future[List[User]] = {
+    userDAO.allUsers
+  }
 }

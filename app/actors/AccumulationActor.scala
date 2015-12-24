@@ -1,12 +1,13 @@
 package actors
 
-import akka.actor.Actor
+import akka.actor.{ ActorLogging, Actor }
 import com.google.inject.Inject
 import models.User
 
 import play.Logger
-import services.{ TrelloService, UserService }
+import services.{ BoardService, TrelloService, UserService }
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object AccumulationActor {
@@ -15,18 +16,21 @@ object AccumulationActor {
   case class AccumulationMark(user: User, boardId: String)
 }
 
-class AccumulationActor @Inject() (userService: UserService, trelloService: TrelloService) extends Actor {
+class AccumulationActor @Inject() (userService: UserService,
+    boardService: BoardService,
+    trelloService: TrelloService) extends Actor with ActorLogging {
 
   import AccumulationActor._
+
   import context._
 
-  val schedule = system.scheduler.schedule(6.minutes, 5.hours, self, Accumulate)
+  val schedule = system.scheduler.schedule(2.seconds, 5.hours, self, Accumulate)
 
   def receive = {
 
     case Accumulate => {
       Logger.info("Accumulate")
-      //accumulate()
+      accumulate()
     }
 
     case _ => Logger.info("Unhandled Message")
@@ -34,69 +38,60 @@ class AccumulationActor @Inject() (userService: UserService, trelloService: Trel
 
   def accumulate() = {
 
-    //    userService.allUsers.map { users =>
-    //      users.foreach { user =>
-    //
-    //        val boardUrl = (for {
-    //          key <- user.key
-    //          token <- user.token
-    //          if !token.isEmpty && !key.isEmpty
-    //        } yield (key, token)).map { v =>
-    //          val (key, token) = v
-    //          s"https://api.trello.com/1/members/me?key=$key&token=$token&boards=all&organizations=all"
-    //        }
-    //
-    //        Logger.info(s"Eventually ${user.key}, ${user.token}, ${boardUrl}")
-    //
-    //        //summarizeAndInsert(user.key, user.token, boardUrl)
-    //      }
-    //    }
-  }
+    val boardFuture = userService.allUsers.flatMap { userList =>
 
-  //  def summarizeAndInsert(key: Option[String], token: Option[String], boardUrl: Option[String]): Future[Unit] = {
-  //
-  //    boardUrl.map { url =>
-  //
-  //      val memberFuture = trelloService.member(url)
-  //
-  //      for {
-  //        member <- memberFuture
-  //        cards <- trelloService.boardInfoFutures(key.get, token.get, member.idBoards)
-  //      } yield {
-  //
-  //        cards.map { card =>
-  //          Logger.info("Summerize")
-  //          //val sum = trelloService.summarizeInfo(card)
-  //
-  //        }
-  //      }
-  //
-  //      //res
-  //
-  //      //      (for {
-  //      //        member <- trelloService.member(url)
-  //      //        info <- trelloService.boardInfoFutures(key.get, token.get, member.idBoards)
-  //      //      } yield info).map { cardList =>
-  //      //        cardList.map { board =>
-  //      //          trelloService.summarizeInfo(board).map { item =>
-  //      //
-  //      //
-  //      ////            DB.withSession { implicit s: SlickSession =>
-  //      ////              DailyPoints.insert(item._1)
-  //      ////            }
-  //      ////
-  //      ////            DB.withSession { implicit s: SlickSession =>
-  //      ////              BoardPeriods.insert(item._2)
-  //      ////            }
-  //      //
-  //      //            Future.successful(item)
-  //      //          }
-  //      //        }
-  //      //      }
-  //      Future.successful()
-  //    } getOrElse {
-  //      Future.successful()
-  //    }
-  //  }
+      val userBoards = userList.map { user =>
+
+        trelloService.member(user).map { memberResult =>
+
+          (user, memberResult)
+        }
+      }
+
+      Future.sequence(userBoards)
+    }
+
+    val boardListFuture = boardService.listAllBoards
+
+    val accumulatableList = for {
+      memberList <- boardFuture
+      boardList <- boardListFuture
+    } yield {
+
+      memberList.map { memberResult =>
+
+        val (user, member) = memberResult
+
+        val dbBoards = member.boards.flatMap { memberBoard =>
+          boardList.filter(_.id == memberBoard.id)
+        }
+
+        (user, dbBoards)
+
+      }
+    }
+
+    val elements = accumulatableList.flatMap { item =>
+      Future.sequence {
+        item.map { l =>
+          val (user, boards) = l
+          trelloService.boardInfo(user, boards)
+
+        }
+      }
+    }
+
+    val accumulatableBoardsFuture = elements.map { l => l.flatten }
+
+    for {
+      accumulatableBoards <- accumulatableBoardsFuture
+      accumulatableInfo <- trelloService.summarizeInfo(accumulatableBoards)
+    } yield {
+      boardService.saveAccumulatedData(accumulatableInfo).map { i =>
+        Logger.info("Accumulated")
+      }
+    }
+
+  }
 
 }
