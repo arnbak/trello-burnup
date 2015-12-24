@@ -1,5 +1,4 @@
-Burn Up Tool for Trello Boards
-==============================
+#Burn Up Tool for Trello Boards
 
 [![Build Status](https://travis-ci.org/arnbak/trello-burnup.svg?branch=master)](https://travis-ci.org/arnbak/trello-burnup)
 
@@ -8,17 +7,15 @@ This tool gives the possibility to create burnup graphs for Trello boards.
 It works by running a daily job, that sum the various points to be able to show the graph that represents the progress.
 
 
-Usage
------
+##Usage
 
-Boards should ofcourse be created in Trello. Furthermore a configuration card should be added to each board for which a graph is needed. 
+Boards should of course be created in Trello. 
+A configuration card should be added to each board for which a graph is needed. 
 
 The configuration card should contain two elements, which defines a start date and an end date. 
 
-1. add a card named ```Config```
-
-2. add two elements ```[start] ddMMyyyy``` and ```[end] ddMMyyy``` which defines the period for which the product is being developed.
-
+ 1. add a card named ```Config```
+ 2. add two elements ```[start] ddMMyyyy``` and ```[end] ddMMyyy``` which defines the period for which the product is being developed.
 
 To define a scope, add a estimate to each element in each card. It should be prepended to each element in the form: ```[10] some name```
 

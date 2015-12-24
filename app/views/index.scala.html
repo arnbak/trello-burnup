@@ -1,26 +1,60 @@
-@(info: models.PageInfo, user: Option[models.User] = None, memberInfo: Option[models.Member])
+@(info: models.PageInfo,
+        user: Option[models.User] = None,
+        boardList: List[models.DBBoard])(implicit request: RequestHeader,  messages: Messages)
+@import util.Config
 
 @main(info, user) {
+    <div class="row">
+        <div class="col-md-12">
+            @request.flash.get("error").map { message =>
+                <div class="col-md-6 alert alert-danger alert-error">
+                    <a href="#" class="close" data-dismiss="alert">&times;</a>
+                    <strong>@Messages("error")</strong> @message
+                </div>
+            }
+
+            @request.flash.get("success").map { message =>
+                <div class="col-md-6 alert alert-success">
+                    <a href="#" class="close" data-dismiss="alert">&times;</a>
+                    <strong>Success!</strong> @message
+                </div>
+            }
+        </div>
+    </div>
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-9">
 
-            @memberInfo.map { m =>
-                <h2>Welcome @m.fullName</h2>
+            <h4>Listing your boards</h4>
 
-                <ul>
-                    @m.boards.map { board  =>
-                        <li><a href="@routes.Application.board(board.id)">@board.name</a></li>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Selected</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @boardList.map { b =>
+                        <tr>
+                            <td><a href="@routes.Application.board(b.id)">@b.id</a></td>
+                            <td>@b.name</td>
+                            <td>@b.selected</td>
+                            <td>@Config.formatDateTime(b.updated)</td>
+                        </tr>
                     }
-                </ul>
-            }.getOrElse {
-                <h4>Issues loading trello information</h4>
-            }
+
+                </tbody>
+            </table>
 
         </div>
 
-        <div class="col-md-6">
 
+
+        <div class="col-md-3">
+            <a class="btn btn-default pull-right" href="@routes.Application.accumulateToday()">Opdatér akkumulering</a>
         </div>
 
     </div>

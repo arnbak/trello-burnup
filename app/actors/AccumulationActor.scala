@@ -2,15 +2,17 @@ package actors
 
 import akka.actor.Actor
 import com.google.inject.Inject
+import models.User
 
 import play.Logger
 import services.{ TrelloService, UserService }
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object AccumulationActor {
   case object Accumulate
+  case class GetAccumulatableBoards(user: User)
+  case class AccumulationMark(user: User, boardId: String)
 }
 
 class AccumulationActor @Inject() (userService: UserService, trelloService: TrelloService) extends Actor {

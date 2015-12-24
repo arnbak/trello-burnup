@@ -11,7 +11,7 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 
-import models.User
+import models.{ PageInfo, User }
 
 import play.api.i18n.{ MessagesApi, Messages }
 import play.api.libs.concurrent.Execution.Implicits._
@@ -76,7 +76,20 @@ class SocialAuthController @Inject() (
     }).recover {
       case e: ProviderException =>
         logger.error("Unexpected provider error", e)
-        Redirect(routes.LoginController.login()).flashing("error" -> Messages("could.not.authenticate"))
+        Redirect(routes.SocialAuthController.loginPage()).flashing("error" -> Messages("could.not.authenticate"))
     }
+  }
+
+  def loginPage = UserAwareAction { implicit request =>
+    Ok(views.html.login(PageInfo("Sign in", request.uri), socialProviderRegistry))
+  }
+
+  def logout = SecuredAction.async { implicit request =>
+    //Redirect(routes.LoginController.loginPage()).withNewSession.flashing("success" -> "You are now signed out, thank you for using this application! Please come again!")
+
+    val result = Redirect(routes.SocialAuthController.loginPage())
+    env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
+
+    env.authenticatorService.discard(request.authenticator, result)
   }
 }

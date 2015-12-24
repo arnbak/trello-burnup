@@ -1,16 +1,14 @@
-@(info: models.PageInfo, user: Option[models.User] = None, board: Option[models.Board])
+@(info: models.PageInfo, user: Option[models.User] = None, board: models.Board)
 
 @main(info, user) {
 
-    @board.map { b =>
-        <h4>@b.name</h4>
-    }
+    <h4>@board.name</h4>
 
-    <div>
-        <button class="btn btn-primary" ng-click="boardCtrl.accumulate()">Reload <i class="fa fa-refresh" ng-class="{ 'fa-spin' : boardCtrl.loading }"></i></button>
+    @board
+
+    <div id="chart">
+        <svg></svg>
     </div>
 
-    <div class="row">
-        <nvd3 options="boardCtrl.options" data="boardCtrl.data"></nvd3>
-    </div>
+    <script data-main="@routes.Assets.versioned("javascripts/board/board.js")" src="@routes.Assets.versioned("lib/requirejs/require.js")"></script>
 }

@@ -1,6 +1,6 @@
 name := """trello-burnup"""
 
-version := "0.2-SNAPSHOT"
+version := "0.0.2-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
@@ -12,7 +12,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 
-routesGenerator := InjectedRoutesGenerator
+
 
 libraryDependencies ++= Seq(
   jdbc,
@@ -30,15 +30,17 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.0.0",
   specs2 % Test,
 
-  "org.webjars" % "font-awesome" % "4.3.0-1",
-  "org.webjars" % "bootstrap" % "3.3.4",
-  "org.webjars" % "bootstrap" % "3.3.4",
-  "org.webjars" % "bootstrap-sass" % "3.3.1",
-  "org.webjars" % "font-awesome" % "4.3.0-1",
-  "org.webjars" % "angularjs" % "1.3.15",
-  "org.webjars" % "angular-ui-router" % "0.2.13",
-  "org.webjars" % "angular-nvd3" % "0.1.1",
-  "org.webjars" % "d3js" % "3.5.3"
+  "org.webjars" % "font-awesome" % "4.5.0",
+  "org.webjars" % "bootstrap" % "3.3.5",
+  "org.webjars" % "jquery" % "2.1.4",
+  "org.webjars" % "d3js" % "3.5.10",
+  "org.webjars" % "nvd3" % "1.8.1"
 )
 
 scalariformSettings
+
+routesGenerator := InjectedRoutesGenerator
+
+pipelineStages := Seq(rjs)
+
+RjsKeys.mainModule := "main"

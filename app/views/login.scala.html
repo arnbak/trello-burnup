@@ -1,8 +1,4 @@
-@(info: models.PageInfo,
-        loginForm: Form[forms.LoginForm.Credentials],
-        socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry)(implicit request: RequestHeader, flash: Flash, messages: Messages)
-
-@import b3.vertical.fieldConstructor
+@(info: models.PageInfo, socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry)(implicit request: RequestHeader, messages: Messages)
 
 @main(info, None) {
 
@@ -27,13 +23,13 @@
         <div class="col-md-6">
 
 
-            @flash.get("error").map { message =>
+            @request.flash.get("error").map { message =>
                 <div class="alert alert-danger" role="alert">
                     <strong>Error!</strong> @message
                 </div>
             }
 
-            @flash.get("success").map { message =>
+            @request.flash.get("success").map { message =>
                 <div class="alert alert-success" role="alert">
                     <strong>Success!</strong> @message
                 </div>

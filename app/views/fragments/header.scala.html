@@ -28,12 +28,18 @@
                             }.getOrElse {
                                 <i class="fa fa-user"></i>
                             }
-                            &nbsp;@user.fullName.getOrElse(user.email)
+                            &nbsp;
+                            @user.fullName.map { name =>
+                                @name
+                            }.getOrElse {
+                                @user.email
+                            }
+
                         </a>
 
                     </li>
                     <li>
-                        <a href="@routes.LoginController.logout()"><i class="fa fa-sign-out"></i>&nbsp;Sign out</a>
+                        <a href="@routes.SocialAuthController.logout()"><i class="fa fa-sign-out"></i>&nbsp;Sign out</a>
                     </li>
 
                 }

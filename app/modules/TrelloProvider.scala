@@ -89,7 +89,6 @@ class TrelloProfileParser extends SocialProfileParser[JsValue, CommonSocialProfi
    */
   override def parse(json: JsValue) = Future.successful {
 
-
     val userID = (json \ "id").as[String]
     val firstName = (json \ "fullName").asOpt[String]
     val lastName = (json \ "fullName").asOpt[String]
