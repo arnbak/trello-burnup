@@ -107,13 +107,6 @@ class Application @Inject() (
         NotFound(Json.obj("message" -> ("no period found for boardid: " + boardId)))
       }
     }
-    //    val period: Option[Period] = boardService.periodByBoardId(boardId) //BoardPeriods.periodByBoardId(boardId)
-    //
-    //    period.map {
-    //      r => Ok(Json.toJson(r))
-    //    } getOrElse {
-    //      NotFound(Json.obj("message" -> ("no period found for boardid: " + boardId)))
-    //    }
   }
 
   def series(boardId: String) = SecuredAction.async { implicit request =>
@@ -121,8 +114,8 @@ class Application @Inject() (
     boardService.periodByBoardId(boardId).map { period =>
       period.map { p =>
 
-        val scopeLine: List[Seq[Long]] = trelloService.createScopeLine(p)
-        val finishedLine: List[Seq[Long]] = trelloService.createFinishedLine(p)
+        val scopeLine: List[LineElement] = trelloService.createScopeLine(p)
+        val finishedLine: List[LineElement] = trelloService.createFinishedLine(p)
         val bestLine: List[LineElement] = trelloService.createBestLine(p, finishedLine)
 
         Ok(Json.obj("scopeLine" -> scopeLine, "finishedLine" -> finishedLine, "bestLine" -> bestLine))

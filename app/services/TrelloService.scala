@@ -1,9 +1,7 @@
 package services
 
 import javax.inject.Inject
-
 import com.google.inject.ImplementedBy
-import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
@@ -30,10 +28,9 @@ trait TrelloService {
   def member(user: User): Future[Member]
   def boardInfo(user: User, boards: List[DBBoard]): Future[List[Card]]
   def summarizeInfo(board: List[Card]): Future[Map[models.Point, models.Period]]
-
-  def createBestLine(p: Period, finishedLine: List[Seq[Long]]): List[LineElement]
-  def createFinishedLine(p: Period): List[Seq[Long]]
-  def createScopeLine(p: Period): List[Seq[Long]]
+  def createBestLine(p: Period, finishedLine: List[LineElement]): List[LineElement]
+  def createFinishedLine(p: Period): List[LineElement]
+  def createScopeLine(p: Period): List[LineElement]
 }
 
 class TrelloServiceImpl @Inject() (WS: WSClient,
@@ -154,7 +151,7 @@ class TrelloServiceImpl @Inject() (WS: WSClient,
     }
   }
 
-  def createBestLine(p: Period, finishedLine: List[Seq[Long]]): List[LineElement] = {
+  def createBestLine(p: Period, finishedLine: List[LineElement]): List[LineElement] = {
 
     val regression = new SimpleRegression
 
@@ -162,7 +159,7 @@ class TrelloServiceImpl @Inject() (WS: WSClient,
 
     finishedLine.zipWithIndex.foreach {
       case (v, i) => {
-        regression.addData(i, v(1))
+        regression.addData(i, v.y)
       }
     }
 
@@ -180,8 +177,8 @@ class TrelloServiceImpl @Inject() (WS: WSClient,
 
   }
 
-  def createFinishedLine(p: Period): List[Seq[Long]] = {
-    val line = new ListBuffer[Seq[Long]]
+  def createFinishedLine(p: Period): List[LineElement] = {
+    val line = new ListBuffer[LineElement]
 
     var finishedVal: Int = 0
 
@@ -192,17 +189,17 @@ class TrelloServiceImpl @Inject() (WS: WSClient,
 
       point.map { p =>
         finishedVal = p.finished
-        line += Seq(day.toDateTimeAtStartOfDay.getMillis, p.finished)
+        line += LineElement(day.toDateTimeAtStartOfDay.getMillis, p.finished)
       }.getOrElse {
-        if (finishedVal == 0) line += Seq(day.toDateTimeAtStartOfDay.getMillis, 0)
+        if (finishedVal == 0) line += LineElement(day.toDateTimeAtStartOfDay.getMillis, 0)
       }
     }
 
     line.toList
   }
 
-  def createScopeLine(p: Period): List[Seq[Long]] = {
-    var line = new ListBuffer[Seq[Long]]
+  def createScopeLine(p: Period): List[LineElement] = {
+    var line = new ListBuffer[LineElement]
     var scopeVal: Int = 0
 
     for (i <- 0 to p.periodInDayes.get) {
@@ -212,9 +209,9 @@ class TrelloServiceImpl @Inject() (WS: WSClient,
 
       point.map { r =>
         scopeVal = r.scope
-        line += Seq(day.toDateTimeAtStartOfDay.getMillis, r.scope)
+        line += LineElement(day.toDateTimeAtStartOfDay.getMillis, r.scope)
       }.getOrElse {
-        line += Seq(day.toDateTimeAtStartOfDay.getMillis, scopeVal)
+        line += LineElement(day.toDateTimeAtStartOfDay.getMillis, scopeVal)
       }
     }
 

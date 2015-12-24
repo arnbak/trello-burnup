@@ -4,13 +4,8 @@
     require(['../main'], function () {
 
         require(['jquery', 'd3', 'nv'], function ($, d3, nv) {
-            console.log('D3', d3);
 
-            console.log('NVD3', nv);
-
-            //console.log('data', sinAndCos());
-
-            var path = window.location.pathname; //.indexOf('/board/')
+            var path = window.location.pathname;
 
             var index = path.indexOf('/board/');
 
@@ -23,41 +18,9 @@
 
             var seriesUrl = '/series/' + boardId;
 
-            console.log("seriesUrl",seriesUrl)
-
             var scopeLine = [],bestLine = [],finishedLine = [];
 
-            $.ajax( { url : seriesUrl }).then(function(result) {
-
-                scopeLine = result.scopeLine;
-                bestLine = result.bestLine;
-                finishedLine = result.finishedLine;
-            });
-
-
-
-            var newScopeLine = {
-                values: scopeLine,      //values - represents the array of {x,y} data points
-                key: 'Scope Line', //key  - the name of the series.
-                color: '#45454A'  //color - optional: choose your own line color.
-            };
-
-            var newFinishedLine = {
-                values: finishedLine,
-                key: 'Finished Line',
-                color: '#AFEE7E'
-            };
-
-            var newBestLine = {
-                values: bestLine,
-                key: 'Projected Scope',
-                color: '#E4A25A'
-            };
-
             var theData = [];
-            theData.push(newScopeLine);
-            theData.push(newFinishedLine);
-            theData.push(newBestLine);
 
             nv.addGraph(function () {
 
@@ -67,13 +30,8 @@
                     .showYAxis(true)
                     .showXAxis(true);
 
-                //chart.xAxis     //Chart x-axis settings
-                //    .axisLabel('Time (ms)')
-                //    .tickFormat(d3.format(',r'));
-                //
-                //chart.yAxis     //Chart y-axis settings
-                //    .axisLabel('Voltage (v)')
-                //    .tickFormat(d3.format('.02f'));
+                chart.height(450);
+
 
                 chart.xAxis.axisLabel('Period (datetime)').tickFormat(function(d) {
                     return d3.time.format('%d-%m-%y')(new Date(d))
@@ -81,29 +39,46 @@
 
                 chart.yAxis.axisLabel('Scope').showMaxMin(false);
 
-                chart.x = function(d) {
-                    return d[0];
-                };
+                $.ajax( { url : seriesUrl }).then(function(result) {
+                    //console.log("r", result.scopeLine);
+                    scopeLine = result.scopeLine;
+                    bestLine = result.bestLine;
+                    finishedLine = result.finishedLine;
 
-                chart.y = function(d) {
-                    return d[1];
-                };
 
-                /* Done setting the chart up? Time to render it!*/
-                //var myData = sinAndCos();   //You need data...
+                    var newScopeLine = {
+                        values: scopeLine,      //values - represents the array of {x,y} data points
+                        key: 'Scope Line', //key  - the name of the series.
+                        color: '#45454A'  //color - optional: choose your own line color.
+                    };
 
-                d3.select('#chart svg').datum(theData).call(chart);    //Select the <svg> element you want to render the chart in.
-                    //.datum(theData)         //Populate the <svg> element with chart data...
-                    //.call(chart);          //Finally, render the chart!
+                    var newFinishedLine = {
+                        values: finishedLine,
+                        key: 'Finished Line',
+                        color: '#AFEE7E'
+                    };
+
+                    var newBestLine = {
+                        values: bestLine,
+                        key: 'Projected Scope',
+                        color: '#E4A25A'
+                    };
+
+                    theData.push(newScopeLine);
+                    theData.push(newFinishedLine);
+                    theData.push(newBestLine);
+
+                    //Select the <svg> element you want to render the chart in.
+                    d3.select('#chart svg').datum(theData).call(chart);
+                });
 
                 //Update the chart when window resizes.
                 nv.utils.windowResize(function () {
                     chart.update()
                 });
+
                 return chart;
             });
-
-
 
         });
     });
