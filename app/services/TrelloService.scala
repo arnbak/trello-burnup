@@ -1,5 +1,6 @@
 package services
 
+import java.text.DecimalFormat
 import javax.inject.Inject
 import com.google.inject.ImplementedBy
 import com.mohiva.play.silhouette.api.util.HTTPLayer
@@ -9,28 +10,28 @@ import models._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.apache.commons.math3.stat.regression.SimpleRegression
-import org.joda.time
-import org.joda.time.{ LocalDate, Days, DateTime }
+import org.joda.time.{ Days, DateTime }
 import org.joda.time.format.DateTimeFormat
 import play.Logger
 import play.api.Configuration
 
 import play.api.http.Status
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.util.{ Failure, Success, Try }
 
 @ImplementedBy(classOf[TrelloServiceImpl])
 trait TrelloService {
   def member(user: User): Future[Member]
   def boardInfo(user: User, boards: List[DBBoard]): Future[List[Card]]
   def summarizeInfo(board: List[Card]): Future[Map[models.Point, models.Period]]
-  def createBestLine(p: Period, finishedLine: List[LineElement]): List[LineElement]
-  def createFinishedLine(p: Period): List[LineElement]
-  def createScopeLine(p: Period): List[LineElement]
+
+  def createBestLine(p: Period, finishedLine: List[LineElement]): Future[List[LineElement]]
+  def createFinishedLine(p: Period): Future[List[LineElement]]
+  def createScopeLine(p: Period): Future[List[LineElement]]
 }
 
 class TrelloServiceImpl @Inject() (WS: WSClient,
@@ -83,138 +84,156 @@ class TrelloServiceImpl @Inject() (WS: WSClient,
     }
   }
 
+  def parseBoardName(name: String): String = {
+    val startIndex: Int = name.indexOf("[")
+    val endIndex: Int = name.indexOf("]")
+
+    if (startIndex != -1 && endIndex != -1) {
+      name.substring(startIndex + 1, endIndex)
+    } else {
+      ""
+    }
+  }
+
+  def parseNameAsValue(name: String): Option[Int] = {
+    Try {
+      val boardNameValue = parseBoardName(name)
+      boardNameValue.toInt
+    } match {
+      case Success(intValue) => Some(intValue)
+      case Failure(_) => None
+    }
+  }
+
   def summarizeInfo(board: List[Card]): Future[Map[models.Point, models.Period]] = Future.successful {
 
-    board.groupBy(_.idBoard).map { boardCard =>
+    board.groupBy(_.idBoard).map {
+      case (boardId, boardCardList) =>
 
-      val (boardId, boardCardList) = boardCard
+        var scopePoints: Int = 0
+        var finished: Int = 0
+        var progress: Int = 0
 
-      var points: Int = 0
-      var finished: Int = 0
-      var progress: Int = 0
+        val fmt = DateTimeFormat.forPattern("ddMMyyyy")
 
-      var startDate: Option[DateTime] = None
-      var endDate: Option[DateTime] = None
-      val fmt = DateTimeFormat.forPattern("ddMMyyyy")
+        val startDate: Option[DateTime] = boardCardList.find(c => c.name.contains("start")).map { c =>
+          val start: String = c.name.substring(c.name.indexOf("]") + 1).trim
+          fmt.parseDateTime(start)
+        }
 
-      boardCardList.map { card =>
-        Logger.info("Card " + boardCard._1 + " card " + card.name)
+        val endDate: Option[DateTime] = boardCardList.find(c => c.name.contains("end")).map { c =>
+          val end: String = c.name.substring(c.name.indexOf("]") + 1).trim
+          fmt.parseDateTime(end)
+        }
 
-        val startIndex: Int = card.name.indexOf("[")
-        val endIndex: Int = card.name.indexOf("]")
+        boardCardList.foreach { card =>
 
-        if (startIndex != -1 && endIndex != -1) {
-          //Logger.info("Name " + card.name)
-          val name: String = card.name.substring(startIndex + 1, endIndex)
-          //Logger.info("Name value " + name)
+          parseNameAsValue(card.name) match {
+            case Some(intValue) =>
 
-          try {
-            val intValue = name.toInt
-            points = points + intValue
-            card.labels.map {
-              label =>
-                {
-                  if (label.color.equals("blue")) {
-                    progress = progress + intValue
-                  } else if (label.color.equals("green")) {
-                    finished = finished + intValue
-                  } else if (label.color.equals("purple") || label.color.equals("red")) {
-                    points = points - intValue
-                  }
+              scopePoints = scopePoints + intValue
+
+              card.labels.foreach { label =>
+                label.color match {
+                  case "blue" => progress = progress + intValue
+                  case "green" => finished = finished + intValue
+                  case "purple" => scopePoints = scopePoints - intValue
+                  case "red" => scopePoints = scopePoints - intValue
+                  case _ => Logger.info(s"Color `${label.color}` not taken into account")
                 }
-            }
-          } catch {
-            case e: NumberFormatException => {
-              if (name.equals("start")) {
-                val start: String = card.name.substring(card.name.indexOf("]") + 1).trim
-                startDate = Some(fmt.parseDateTime(start))
-              } else if (name.equals("end")) {
-                val end: String = card.name.substring(card.name.indexOf("]") + 1).trim
-                endDate = Some(fmt.parseDateTime(end))
               }
-            }
+
+            case _ =>
           }
         }
-      }
 
-      val validDates = for {
-        sDate <- startDate
-        eDate <- endDate
-      } yield (sDate, eDate)
+        val validDates = for {
+          sDate <- startDate
+          eDate <- endDate
+        } yield (sDate, eDate)
 
-      val pointForToday: Point = Point(id = None, boardId, new time.DateTime(), points, progress, finished)
-      val days: Option[Int] = Some(Days.daysBetween(validDates.get._1, validDates.get._2).getDays)
-      val boardPeriod: Period = Period(id = None, boardId, validDates.get._1, validDates.get._2, days)
+        val pointForToday: Point = Point(id = None, boardId, new DateTime(), scopePoints, progress, finished)
+        val days: Option[Int] = Some(Days.daysBetween(validDates.get._1, validDates.get._2).getDays)
+        val boardPeriod: Period = Period(id = None, boardId, validDates.get._1, validDates.get._2, days)
 
-      (pointForToday, boardPeriod)
+        (pointForToday, boardPeriod)
 
     }
   }
 
-  def createBestLine(p: Period, finishedLine: List[LineElement]): List[LineElement] = {
+  def createBestLine(p: Period, finishedLine: List[LineElement]): Future[List[LineElement]] = Future.successful {
 
     val regression = new SimpleRegression
 
     regression.addData(0, 0)
 
     finishedLine.zipWithIndex.foreach {
-      case (v, i) => {
-        regression.addData(i, v.y)
-      }
+      case (v, i) => regression.addData(i, v.y)
     }
 
-    val y = new ListBuffer[LineElement]
+    val df = new DecimalFormat("#.0")
 
-    for (i <- 0 to p.periodInDayes.get) {
-      val day = new LocalDate(p.startDate).plusDays(i)
-      y += LineElement(
-        day.toDateTimeAtStartOfDay.getMillis,
-        regression.getSlope * i
-      )
+    p.periodInDayes.fold(List.empty[LineElement]) { days =>
+
+      (for {
+        i <- 0 to days
+      } yield {
+        LineElement(
+          p.startDate.toLocalDate.plusDays(i).toDateTimeAtStartOfDay.getMillis,
+          df.format(regression.getSlope * i).toDouble
+        )
+      }).toList
     }
-
-    y.toList
-
   }
 
-  def createFinishedLine(p: Period): List[LineElement] = {
-    val line = new ListBuffer[LineElement]
+  def createFinishedLine(p: Period): Future[List[LineElement]] = {
 
-    var finishedVal: Int = 0
+    val vS = p.periodInDayes.fold(List.empty[LineElement]) { days =>
 
-    for (i <- 0 to p.periodInDayes.get) {
-      val day = new LocalDate(p.startDate).plusDays(i)
+      var finishedVal: Int = 0
 
-      val point: Option[Point] = boardService.pointForDay(p.boardId, day)
+      val v = (for {
+        i <- 0 to days
+      } yield {
+        p.startDate.plusDays(i).toLocalDate
+      }).zipWithIndex.map {
+        case (d, i) =>
 
-      point.map { p =>
-        finishedVal = p.finished
-        line += LineElement(day.toDateTimeAtStartOfDay.getMillis, p.finished)
-      }.getOrElse {
-        if (finishedVal == 0) line += LineElement(day.toDateTimeAtStartOfDay.getMillis, 0)
+          if (i == 0) {
+            LineElement(d.toDateTimeAtStartOfDay.getMillis, 0)
+          } else {
+            boardService.pointForDay(p.boardId, d).map { period =>
+              finishedVal = period.finished
+              LineElement(d.toDateTimeAtStartOfDay.getMillis, period.finished)
+            } getOrElse {
+              LineElement(d.toDateTimeAtStartOfDay.getMillis, finishedVal)
+            }
+          }
       }
+
+      v.toList
+
     }
 
-    line.toList
+    Future.successful(vS)
   }
 
-  def createScopeLine(p: Period): List[LineElement] = {
-    var line = new ListBuffer[LineElement]
-    var scopeVal: Int = 0
+  def createScopeLine(p: Period): Future[List[LineElement]] = Future.successful {
+    p.periodInDayes.fold(List.empty[LineElement]) { days =>
+      var scopeVal: Int = 0
 
-    for (i <- 0 to p.periodInDayes.get) {
-      val day = new LocalDate(p.startDate).plusDays(i)
-
-      val point: Option[Point] = boardService.pointForDay(p.boardId, day)
-
-      point.map { r =>
-        scopeVal = r.scope
-        line += LineElement(day.toDateTimeAtStartOfDay.getMillis, r.scope)
-      }.getOrElse {
-        line += LineElement(day.toDateTimeAtStartOfDay.getMillis, scopeVal)
-      }
+      (for {
+        i <- 0 to days
+      } yield {
+        p.startDate.plusDays(i).toLocalDate
+      }).map { t =>
+        boardService.pointForDay(p.boardId, t).map { p =>
+          scopeVal = p.scope
+          LineElement(t.toDateTimeAtStartOfDay.getMillis, p.scope)
+        } getOrElse {
+          LineElement(t.toDateTimeAtStartOfDay.getMillis, scopeVal)
+        }
+      }.toList
     }
-
-    line.toList
   }
 }

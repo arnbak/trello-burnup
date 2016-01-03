@@ -21,7 +21,8 @@
 
 
 
-    require(['jquery', 'bootstrap'],function() {
+    require(['jquery', 'bootstrap'], function() {
+        
     });
 
     require.onError = function (err) {

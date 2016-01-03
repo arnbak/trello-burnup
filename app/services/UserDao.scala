@@ -61,13 +61,10 @@ class UserDAOImpl @Inject() (db: Database) extends UserDAO {
   def find(loginInfo: LoginInfo) = {
 
     Future.successful {
-      Logger.info(s"trying to find user $loginInfo")
 
       val user = db.withConnection { implicit c =>
         SQL"""SELECT * FROM public.users WHERE providerid=${loginInfo.providerID} AND providerkey=${loginInfo.providerKey}""".as(userParser.singleOpt)
       }
-
-      Logger.info(s"Got user $user")
 
       user
     }

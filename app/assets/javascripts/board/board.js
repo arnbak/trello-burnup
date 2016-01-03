@@ -13,7 +13,6 @@
 
             if(index !== -1) {
                 boardId = path.split('/').pop();
-                console.log(typeof boardId)
             }
 
             var seriesUrl = '/series/' + boardId;
@@ -32,22 +31,22 @@
 
                 chart.height(450);
 
-
-                chart.xAxis.axisLabel('Period (datetime)').tickFormat(function(d) {
-                    return d3.time.format('%d-%m-%y')(new Date(d))
-                }).showMaxMin(false);
+                chart.xAxis
+                    .axisLabel('Period (datetime)')
+                    .tickFormat(function(d) {
+                        return d3.time.format('%d-%m-%y')(new Date(d))
+                    }).showMaxMin(false);
 
                 chart.yAxis.axisLabel('Scope').showMaxMin(false);
 
                 $.ajax( { url : seriesUrl }).then(function(result) {
-                    //console.log("r", result.scopeLine);
+
                     scopeLine = result.scopeLine;
                     bestLine = result.bestLine;
                     finishedLine = result.finishedLine;
 
-
                     var newScopeLine = {
-                        values: scopeLine,      //values - represents the array of {x,y} data points
+                        values: scopeLine, //values - represents the array of {x,y} data points
                         key: 'Scope Line', //key  - the name of the series.
                         color: '#45454A'  //color - optional: choose your own line color.
                     };

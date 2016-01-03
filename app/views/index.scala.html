@@ -41,7 +41,13 @@
                         <tr>
                             <td><a href="@routes.Application.board(b.id)">@b.id</a></td>
                             <td>@b.name</td>
-                            <td>@b.selected</td>
+                            <td>
+                                @if(b.selected) {
+                                    <i class="fa fa-thumbs-o-up"></i>
+                                } else {
+                                    <i class="fa fa-thumbs-o-down"></i>
+                                }
+                            </td>
                             <td>@Config.formatDateTime(b.updated)</td>
                         </tr>
                     }

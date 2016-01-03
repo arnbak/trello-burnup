@@ -12,7 +12,6 @@ import anorm._
 
 import play.api.libs.concurrent.Execution.Implicits._
 
-import scala.collection.mutable
 import scala.concurrent.Future
 
 class OAuth1InfoDAO @Inject() (db: Database) extends DelegableAuthInfoDAO[OAuth1Info] {
@@ -109,15 +108,4 @@ class OAuth1InfoDAO @Inject() (db: Database) extends DelegableAuthInfoDAO[OAuth1
     }
 
   }
-}
-
-/**
- * The companion object.
- */
-object OAuth1InfoDAO {
-
-  /**
-   * The data store for the OAuth1 info.
-   */
-  var data: mutable.HashMap[LoginInfo, OAuth1Info] = mutable.HashMap()
 }

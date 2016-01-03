@@ -29,11 +29,7 @@ class BoardServiceImpl @Inject() (boardDao: BoardDao)(implicit ec: ExecutionCont
   }
 
   def pointForDay(boardId: String, day: LocalDate) = {
-    Logger.info(s"Getting point $day")
-    boardDao.findAllPoints().find(_.date.toLocalDate == day).map { p =>
-      Logger.info(s"Point found $p")
-      p
-    }
+    boardDao.findAllPoints().find(b => b.date.toLocalDate == day && b.boardId == boardId)
   }
 
   def saveAccumulatedData(info: Map[Point, Period]): Future[Unit] = {
@@ -45,7 +41,6 @@ class BoardServiceImpl @Inject() (boardDao: BoardDao)(implicit ec: ExecutionCont
       } yield {
         Logger.info("Saved ")
       }
-
     }
 
     Future.successful(Unit)

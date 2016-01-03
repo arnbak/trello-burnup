@@ -76,7 +76,6 @@ class Application @Inject() (
       } getOrElse {
         Redirect(routes.Application.dashboard()).flashing("error" -> "That board does not exist")
       }
-
     }
   }
 
@@ -100,31 +99,33 @@ class Application @Inject() (
   }
 
   def period(boardId: String) = SecuredAction.async { implicit request =>
-    boardService.periodByBoardId(boardId).map { period =>
-      period.map {
-        r => Ok(Json.toJson(r))
-      } getOrElse {
-        NotFound(Json.obj("message" -> ("no period found for boardid: " + boardId)))
-      }
+    boardService.periodByBoardId(boardId).map {
+      case Some(period) => Ok(Json.toJson(period))
+      case None => NotFound(Json.obj("message" -> ("no period found for boardid: " + boardId)))
     }
   }
 
   def series(boardId: String) = SecuredAction.async { implicit request =>
+    boardService.periodByBoardId(boardId).flatMap {
+      case Some(period) =>
 
-    boardService.periodByBoardId(boardId).map { period =>
-      period.map { p =>
+        val scopeLineFuture = trelloService.createScopeLine(period)
+        val finishedLineFuture = trelloService.createFinishedLine(period)
 
-        val scopeLine: List[LineElement] = trelloService.createScopeLine(p)
-        val finishedLine: List[LineElement] = trelloService.createFinishedLine(p)
-        val bestLine: List[LineElement] = trelloService.createBestLine(p, finishedLine)
+        (for {
+          scopeLine <- scopeLineFuture
+          finishedLine <- finishedLineFuture
+          bestLine <- trelloService.createBestLine(period, finishedLine)
+        } yield (scopeLine, finishedLine, bestLine)).map {
+          case (s, f, b) => Ok(Json.obj("scopeLine" -> s, "finishedLine" -> f, "bestLine" -> b))
+        } recoverWith {
+          case e: Throwable =>
+            Logger.error("Exception", e)
+            Future.successful(Redirect(routes.Application.dashboard()).flashing("error" -> s"Error trying to fetch series for $boardId"))
+        }
 
-        Ok(Json.obj("scopeLine" -> scopeLine, "finishedLine" -> finishedLine, "bestLine" -> bestLine))
-
-      }.getOrElse {
-        NotFound(Json.obj("message" -> ("no series found for boardid: " + boardId)))
-      }
+      case None => Future.successful(NotFound(Json.obj("message" -> s"no series found for boardid: $boardId")))
     }
-
   }
 
   def accumulateToday = SecuredAction.async { implicit request =>
@@ -141,6 +142,7 @@ class Application @Inject() (
       Redirect(routes.Application.dashboard()).flashing("success" -> "Accumulation run with success")
     }).recoverWith {
       case e: Throwable =>
+        Logger.error("Error", e)
         Future.successful {
           Redirect(routes.Application.dashboard()).flashing("error" -> "Error while trying to run accumulation for today")
         }

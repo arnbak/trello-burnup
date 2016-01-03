@@ -11,6 +11,8 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.db.Database
 
+import scala.util.{ Failure, Success, Try }
+
 @ImplementedBy(classOf[DBBoardDao])
 trait BoardDao {
   def findAllPoints(): List[Point]
@@ -84,14 +86,9 @@ class DBBoardDao @Inject() (db: Database) extends BoardDao {
   }
 
   def updatePeriod(p: Period) = {
-    Logger.info(s"U UPDATE public.boardperiods SET startdate=${p.startDate},enddate=${p.endDate},periodindays=${p.periodInDayes} WHERE id=${p.boardId}")
-
-    val v = db.withConnection { implicit c =>
+    db.withConnection { implicit c =>
       SQL"""UPDATE public.boardperiods SET startdate=${p.startDate},enddate=${p.endDate},periodindays=${p.periodInDayes} WHERE boardId=${p.boardId}""".executeUpdate()
     }
-
-    Logger.info(s"Updating $v - $p ")
-
   }
 
   def updatePoint(p: Point) = {
@@ -119,25 +116,23 @@ class DBBoardDao @Inject() (db: Database) extends BoardDao {
 
     findPointForToday(p.boardId) match {
       case Some(point) =>
-
-        updatePoint(p)
+        updatePoint(p.copy(id = point.id))
         Some(p)
       case None =>
-        Logger.info("Not found point, creating")
+        Logger.debug("Point for today not found, creating")
         createPoint(p)
     }
   }
 
   def savePeriod(p: Period) = {
-    Logger.info(s"Saving period $p")
+
     findPeriodByBordId(p.boardId) match {
-      case Some(period) => {
-
+      case Some(period) =>
         updatePeriod(p)
-
         Some(p)
-      }
-      case None => createPeriod(p)
+      case None =>
+        Logger.debug("Period not found, creating")
+        createPeriod(p)
     }
   }
 
@@ -169,47 +164,29 @@ class DBBoardDao @Inject() (db: Database) extends BoardDao {
 
   def updateBoard(boardId: String, boardName: String, selected: Boolean) = {
     db.withConnection { implicit c =>
-      SQL"""UPDATE public.boards SET boardName=$boardName,selected=$selected WHERE boardId=$boardId""".executeUpdate()
+      SQL"""UPDATE public.boards SET boardName=$boardName,selected=$selected,updated=${DateTime.now()} WHERE boardId=$boardId""".executeUpdate()
     } match {
-      case rowNr: Int =>
-
-        if (rowNr == 1) {
+      case updated: Int =>
+        if (updated == 1) {
           findBoardById(boardId)
         } else {
           None
         }
-
     }
   }
 
   def insertBoard(boardId: String, boardName: String, selected: Boolean): Option[DBBoard] = {
 
-    try {
-
+    Try {
       findBoardById(boardId) match {
         case Some(board) => updateBoard(boardId, boardName, selected)
         case None => createBoard(boardId, boardName, selected)
       }
-      //None
-    } catch {
-      case e: Exception =>
+    } match {
+      case Success(board) => board
+      case Failure(e) =>
         Logger.info(s"E ${e.getMessage}")
         None
     }
   }
-
-  //def insert(period: Period)(implicit s: Session): Unit = {
-  //    boardPeriods.filter{_.boardId === period.boardId}.firstOption.map { currentPeriod =>
-  //
-  //        val updatedPeriod: Period = Period(currentPeriod.id, period.boardId, period.startDate, period.endDate, period.periodInDayes)
-  //
-  //        boardPeriods.filter({ _.id === currentPeriod.id }).update(updatedPeriod)
-  //
-  //        Logger.debug("Updated period for board " + currentPeriod.boardId)
-  //
-  //    } getOrElse {
-  //      boardPeriods.insert(period)
-  //      Logger.debug("Inserted period for board " + period.boardId)
-  //    }
-  //  }
 }

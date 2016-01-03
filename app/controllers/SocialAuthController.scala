@@ -85,8 +85,6 @@ class SocialAuthController @Inject() (
   }
 
   def logout = SecuredAction.async { implicit request =>
-    //Redirect(routes.LoginController.loginPage()).withNewSession.flashing("success" -> "You are now signed out, thank you for using this application! Please come again!")
-
     val result = Redirect(routes.SocialAuthController.loginPage())
     env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
 

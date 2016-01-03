@@ -1,6 +1,7 @@
 package actors
 
 import akka.actor.{ ActorLogging, Actor }
+import akka.pattern.pipe
 import com.google.inject.Inject
 import models.User
 
@@ -33,7 +34,7 @@ class AccumulationActor @Inject() (userService: UserService,
       accumulate()
     }
 
-    case _ => Logger.info("Unhandled Message")
+    case _ => Logger.warn("Unhandled Message")
   }
 
   def accumulate() = {
@@ -41,9 +42,7 @@ class AccumulationActor @Inject() (userService: UserService,
     val boardFuture = userService.allUsers.flatMap { userList =>
 
       val userBoards = userList.map { user =>
-
         trelloService.member(user).map { memberResult =>
-
           (user, memberResult)
         }
       }
@@ -51,45 +50,39 @@ class AccumulationActor @Inject() (userService: UserService,
       Future.sequence(userBoards)
     }
 
-    val boardListFuture = boardService.listAllBoards
+    val boardListFuture = boardService.listBoardsForAccumulation
 
     val accumulatableList = for {
       memberList <- boardFuture
       boardList <- boardListFuture
     } yield {
 
-      memberList.map { memberResult =>
+      memberList.map {
+        case (user, member) =>
 
-        val (user, member) = memberResult
+          val dbBoards = member.boards.flatMap { memberBoard =>
+            boardList.filter(_.id == memberBoard.id)
+          }
 
-        val dbBoards = member.boards.flatMap { memberBoard =>
-          boardList.filter(_.id == memberBoard.id)
-        }
-
-        (user, dbBoards)
-
+          (user, dbBoards)
       }
     }
 
-    val elements = accumulatableList.flatMap { item =>
+    val accumulatableBoardsFuture = accumulatableList.flatMap { item =>
       Future.sequence {
-        item.map { l =>
-          val (user, boards) = l
-          trelloService.boardInfo(user, boards)
-
+        item.map {
+          case (user, boards) => trelloService.boardInfo(user, boards)
         }
-      }
+      }.map { l => l.flatten }
     }
 
-    val accumulatableBoardsFuture = elements.map { l => l.flatten }
+    //val accumulatableBoardsFuture = accumulatableBoardFuture.map { l => l.flatten }
 
     for {
       accumulatableBoards <- accumulatableBoardsFuture
       accumulatableInfo <- trelloService.summarizeInfo(accumulatableBoards)
     } yield {
-      boardService.saveAccumulatedData(accumulatableInfo).map { i =>
-        Logger.info("Accumulated")
-      }
+      boardService.saveAccumulatedData(accumulatableInfo).mapTo[Unit] pipeTo self
     }
 
   }
