@@ -1,8 +1,8 @@
-#0.0.2 - A little update
+#0.0.2 - immense-spagetti
 
 - Updated from Play 2.3.x to 2.4.x (Which meant some refactoring of the code)
 - Restructured the db model
-- Added the play-silhouette plugin, for authendicating against the trello api (custom provider)
+- Added the play-silhouette plugin, for authendicating aginst the trello api (custom provider)
 
 ##Breaking changes
 
