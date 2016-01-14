@@ -1,10 +1,24 @@
 # --- !Ups
 
-create table "BOARDPERIODS" ("ID" BIGSERIAL PRIMARY KEY,"BOARDID" VARCHAR(254) NOT NULL,"STARTDATE" BIGINT NOT NULL,"ENDDATE" BIGINT NOT NULL,"PERIODINDAYS" INTEGER NOT NULL);
-create table "DAILYPOINTS" ("ID" BIGSERIAL PRIMARY KEY,"BOARDID" VARCHAR(254) NOT NULL,"DATE" BIGINT NOT NULL,"SCOPE" INTEGER NOT NULL,"PROGRESS" INTEGER NOT NULL,"FINISHED" INTEGER NOT NULL);
+create table public.boardperiods (
+  id BIGSERIAL PRIMARY KEY,
+  boardid TEXT NOT NULL,
+  startdate TIMESTAMP NOT NULL,
+  enddate TIMESTAMP NOT NULL,
+  periodindays INTEGER NOT NULL
+);
+
+create table public.dailypoints (
+  id BIGSERIAL PRIMARY KEY,
+  boardid TEXT NOT NULL,
+  date TIMESTAMP NOT NULL,
+  scope INTEGER NOT NULL,
+  progress INTEGER NOT NULL,
+  finished INTEGER NOT NULL
+);
 
 # --- !Downs
 
-#drop table "DAILYPOINTS";
-#drop table "BOARDPERIODS";
+drop table public.dailypoints;
+drop table public.boardperiods;
 

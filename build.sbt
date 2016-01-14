@@ -1,38 +1,46 @@
-import play.PlayImport.PlayKeys
-import JsEngineKeys._
-
-JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
-
 name := """trello-burnup"""
 
-version := "1.0-SNAPSHOT"
+version := "0.0.2-SNAPSHOT"
 
-WebKeys.webTarget := target.value / "scala-web"
+lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-artifactPath in PlayKeys.playPackageAssets := WebKeys.webTarget.value / (artifactPath in PlayKeys.playPackageAssets).value.getName
+scalaVersion := "2.11.7"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
-
-scalaVersion := "2.11.6"
+resolvers ++= Seq(
+  "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases",
+  "Atlassian Releases" at "https://maven.atlassian.com/public/",
+  Resolver.sonatypeRepo("snapshots")
+)
 
 libraryDependencies ++= Seq(
   jdbc,
   cache,
   ws,
   filters,
+  evolutions,
+  "com.mohiva" %% "play-silhouette" % "3.0.4",
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc41",
-  "com.typesafe.slick" %% "slick" % "2.1.0",
-  "com.typesafe.play" %% "play-slick" % "0.8.1",
+  "com.typesafe.play" %% "anorm" % "2.5.0",
+  "net.ceedubs" %% "ficus" % "1.1.2",
+  "org.webjars" %% "webjars-play" % "2.4.0-1",
+  "org.apache.commons" % "commons-math3" % "3.3",
+  "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24" exclude("org.webjars", "jquery"),
+  "net.codingwell" %% "scala-guice" % "4.0.0",
+  specs2 % Test,
 
-  "org.webjars" %% "webjars-play" % "2.3.0-2",
-  "org.webjars" % "bootstrap" % "3.3.4",
-  "org.webjars" % "bootstrap-sass" % "3.3.1",
-  "org.webjars" % "font-awesome" % "4.3.0-1",
-  "org.webjars" % "angularjs" % "1.3.15",
-  "org.webjars" % "angular-ui-router" % "0.2.13",
-  "org.webjars" % "angular-nvd3" % "0.1.1",
-  "org.webjars" % "d3js" % "3.5.3",
-  "org.apache.commons" % "commons-math3" % "3.3"
+  "org.webjars" % "font-awesome" % "4.5.0",
+  "org.webjars" % "bootstrap" % "3.3.5" exclude("org.webjars", "jquery"),
+  "org.webjars" % "jquery" % "2.1.4",
+  "org.webjars" % "d3js" % "3.5.10",
+  "org.webjars" % "nvd3" % "1.8.1",
+
+  "com.microsoft.azure" % "adal4j" % "1.1.2"
 )
 
-pipelineStages := Seq(digest, gzip)
+scalariformSettings
+
+routesGenerator := InjectedRoutesGenerator
+
+pipelineStages := Seq(rjs)
+
+RjsKeys.mainModule := "main"

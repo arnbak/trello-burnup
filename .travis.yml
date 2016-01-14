@@ -1,8 +1,7 @@
 language: scala
+jdk:
+  - oraclejdk8
 scala:
-  - 2.11.6
-before_install:
-  - gem install sass
-  - gem install compass
+  - 2.11.7
 script:
-  - sbt stage
+  - sbt clean compile

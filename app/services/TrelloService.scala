@@ -1,256 +1,239 @@
 package services
 
-import java.util.Date
-
-import models.{BoardPeriods, DailyPoints, Period, Point}
-import org.joda.time.{Days, DateTime}
+import java.text.DecimalFormat
+import javax.inject.Inject
+import com.google.inject.ImplementedBy
+import com.mohiva.play.silhouette.api.util.HTTPLayer
+import com.mohiva.play.silhouette.impl.providers._
+import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
+import models._
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.apache.commons.math3.stat.regression.SimpleRegression
+import org.joda.time.{ Days, DateTime }
 import org.joda.time.format.DateTimeFormat
 import play.Logger
+import play.api.Configuration
 
 import play.api.http.Status
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
-import play.api.libs.ws.WS
-import play.api.Play.current
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
+import play.api.libs.ws.WSClient
 
-import play.api.db.slick._
+import scala.concurrent.ExecutionContext.Implicits._
+import scala.util.{ Failure, Success, Try }
 
-case class Member(id: String,
-                  fullName: String,
-                  initials: String,
-                  memberType: String,
-                  products: List[Int],
-                  url: String,
-                  username: String,
-                  gravatarHash: String,
-                  idBoards: List[String],
-                  idOrganizations: Option[List[String]],
-                  idBoardsPinned: Option[List[String]],
-                  boards: List[Board])
+@ImplementedBy(classOf[TrelloServiceImpl])
+trait TrelloService {
+  def member(user: User): Future[Member]
+  def boardInfo(user: User, boards: List[DBBoard]): Future[List[Card]]
+  def summarizeInfo(board: List[Card]): Future[Map[models.Point, models.Period]]
 
-object Member {
-
-  implicit val memberReads: Reads[Member] = (
-    (__ \ "id").read[String] and
-      (__ \ "fullName").read[String] and
-      (__ \ "initials").read[String] and
-      (__ \ "memberType").read[String] and
-      (__ \ "products").read[List[Int]] and
-      (__ \ "url").read[String] and
-      (__ \ "username").read[String] and
-      (__ \ "gravatarHash").read[String] and
-      (__ \ "idBoards").read[List[String]] and
-      (__ \ "idOrganizations").read[Option[List[String]]] and
-      (__ \ "idBoardsPinned").read[Option[List[String]]] and
-      (__ \ "boards").read[List[Board]]
-    )(Member.apply _)
+  def createBestLine(p: Period, finishedLine: List[LineElement]): Future[List[LineElement]]
+  def createFinishedLine(p: Period): Future[List[LineElement]]
+  def createScopeLine(p: Period): Future[List[LineElement]]
 }
 
-case class Board(name: String,
-                 closed: Boolean,
-                 idOrganization: Option[String],
-                 pinned: Option[String],
-                 id: String)
+class TrelloServiceImpl @Inject() (WS: WSClient,
+    httpLayer: HTTPLayer,
+    oAuth1InfoDAO: OAuth1InfoDAO,
+    configuration: Configuration,
+    boardService: BoardService) extends TrelloService {
 
-object Board {
-  implicit val boardReads: Reads[Board] = (
-    (__ \ "name").read[String] and
-      (__ \ "closed").read[Boolean] and
-      (__ \ "idOrganization").readNullable[String] and
-      (__ \ "pinned").readNullable[String] and
-      (__ \ "id").read[String]
-    )(Board.apply _)
-}
+  val settings = configuration.underlying.as[OAuth1Settings]("silhouette.trello")
 
-case class Organization()
+  val oauthService = new PlayOAuth1Service(settings)
 
-case class Card (
-                  id: String,
-                  closed: Boolean,
-                  dateLastActivity: String,
-                  desc: String,
-                  name: String,
-                  idBoard: String,
-                  idList: String,
-                  idShort: Int,
-                  idLabels: List[String],
-                  labels: List[Label],
-                  shortUrl: String,
-                  url: String)
+  def member(user: User): Future[Member] = {
 
-object Card {
-  implicit val cardReads: Reads[Card] = (
-    (__ \ "id").read[String] and
-      (__ \ "closed").read[Boolean] and
-      (__ \ "dateLastActivity").read[String] and
-      (__ \ "desc").read[String] and
-      (__ \ "name").read[String] and
-      (__ \ "idBoard").read[String] and
-      (__ \ "idList").read[String] and
-      (__ \ "idShort").read[Int] and
-      (__ \ "idLabels").read[List[String]] and
-      (__ \ "labels").read[List[Label]] and
-      (__ \ "shortUrl").read[String] and
-      (__ \ "url").read[String]
-    )(Card.apply _)
-}
+    oAuth1InfoDAO.find(user.loginInfo).flatMap { infoOpt =>
+      infoOpt.map { info =>
 
-case class Label(id: String,
-                 idBoard: String,
-                 name: String,
-                 color: String,
-                 uses: Int)
+        httpLayer.url(s"https://api.trello.com/1/members/me?boards=all&organizations=all").sign(oauthService.sign(info)).get().flatMap { response =>
 
-object Label {
-  implicit val labelReads: Reads[Label] = (
-    (__ \ "id").read[String] and
-      (__ \ "idBoard").read[String] and
-      (__ \ "name").read[String] and
-      (__ \ "color").read[String] and
-      (__ \ "uses").read[Int]
-    )(Label.apply _)
-}
-
-
-object TrelloService {
-
-  /**
-   *
-   * @param url
-   * @return
-   */
-  def member(url: String): Future[Member] = {
-    WS.url(url).get().flatMap { response =>
-      response.status match {
-        case Status.OK => Future.successful(response.json.as[Member])
-      }
-    }
-  }
-
-  /**
-   *
-   * @param key
-   * @param token
-   * @param boards
-   * @return
-   */
-  def boardInfoFutures(key: String, token: String, boards: List[String]): Future[List[List[Card]]] = {
-
-    val futures = boards.map { boardId =>
-      val cardsUrl = s"https://api.trello.com/1/boards/$boardId/cards?key=$key&token=$token"
-      WS.url(cardsUrl).get().flatMap { response =>
-
-        response.status match {
-          case Status.OK => Future.successful(response.json.as[List[Card]])
-
+          response.status match {
+            case Status.OK => Future.successful(response.json.as[Member])
+            case _ => Future.failed(new Exception(s"Status from trello api ${response.status}"))
+          }
         }
+      }.getOrElse {
+        Future.failed(new Exception("No login info was found"))
       }
-    }
-
-    Future.sequence(futures)
-    
-  }
-
-  /**
-   *
-   * @param key
-   * @param token
-   * @param member
-   * @return
-   */
-  def boardInfo(key: String, token: String, member: Member): Future[List[List[Card]]] = {
-
-    val cardFutures = member.boards.map { board =>
-      val cardUrl = s"https://api.trello.com/1/boards/${board.id}/cards?key=$key&token=$token"
-      Logger.info(s"username: ${member.username} url $cardUrl")
-      WS.url(cardUrl).get().map { response =>
-        response.status match {
-          case Status.OK => response.json.as[List[Card]]
-        }
-      }
-    }
-
-    Future.sequence(cardFutures).map { list =>
-      list
     }
   }
 
+  def boardInfo(user: User, boards: List[DBBoard]): Future[List[Card]] = {
 
-  /**
-   *
-   * @param board
-   * @return
-   */
-  def summarizeInfo(board: List[Card]) : Map[models.Point, models.Period] = {
+    oAuth1InfoDAO.find(user.loginInfo).flatMap { infoOpt =>
+      infoOpt.map { info =>
 
-    val result = board.groupBy(_.idBoard).map { boardCard =>
-
-      var points: Int = 0
-      var finished: Int = 0
-      var progress: Int = 0
-
-      var startDate: Option[DateTime] = None
-      var endDate: Option[DateTime] = None
-      val fmt = DateTimeFormat.forPattern("ddMMyyyy")
-
-      boardCard._2.map { card =>
-        Logger.info("Card " + boardCard._1 + " card " + card.name)
-
-        val startIndex: Int = card.name.indexOf("[")
-        val endIndex: Int = card.name.indexOf("]")
-
-        if (startIndex != -1 && endIndex != -1) {
-          //Logger.info("Name " + card.name)
-          val name: String = card.name.substring(startIndex + 1, endIndex)
-          //Logger.info("Name value " + name)
-
-          try {
-            val intValue = name.toInt
-            points = points + intValue
-            card.labels.map {
-              label => {
-                if (label.color.equals("blue")) {
-                  progress = progress + intValue
-                } else if (label.color.equals("green")) {
-                  finished = finished + intValue
-                } else if (label.color.equals("purple") || label.color.equals("red")) {
-                  points = points - intValue
-                }
-              }
-            }
-          } catch {
-            case e: NumberFormatException => {
-              if (name.equals("start")) {
-                val start: String = card.name.substring(card.name.indexOf("]") + 1).trim
-                startDate = Some(fmt.parseDateTime(start))
-              } else if (name.equals("end")) {
-                val end: String = card.name.substring(card.name.indexOf("]") + 1).trim
-                endDate = Some(fmt.parseDateTime(end))
-              }
+        val t = boards.map { board =>
+          httpLayer.url(s"https://api.trello.com/1/boards/${board.id}/cards").sign(oauthService.sign(info)).get().flatMap { response =>
+            response.status match {
+              case Status.OK => Future.successful(response.json.as[List[Card]])
+              case _ => Future.failed(new Exception(s"Status from trello api ${response.status}"))
             }
           }
         }
+
+        Future.sequence(t).map { list => list.flatten }
+
+      } getOrElse {
+        Future.failed(new Exception("No login info was found"))
+      }
+    }
+  }
+
+  def parseBoardName(name: String): String = {
+    val startIndex: Int = name.indexOf("[")
+    val endIndex: Int = name.indexOf("]")
+
+    if (startIndex != -1 && endIndex != -1) {
+      name.substring(startIndex + 1, endIndex)
+    } else {
+      ""
+    }
+  }
+
+  def parseNameAsValue(name: String): Option[Int] = {
+    Try {
+      val boardNameValue = parseBoardName(name)
+      boardNameValue.toInt
+    } match {
+      case Success(intValue) => Some(intValue)
+      case Failure(_) => None
+    }
+  }
+
+  def summarizeInfo(board: List[Card]): Future[Map[models.Point, models.Period]] = Future.successful {
+
+    board.groupBy(_.idBoard).map {
+      case (boardId, boardCardList) =>
+
+        var scopePoints: Int = 0
+        var finished: Int = 0
+        var progress: Int = 0
+
+        val fmt = DateTimeFormat.forPattern("ddMMyyyy")
+
+        val startDate: Option[DateTime] = boardCardList.find(c => c.name.contains("start")).map { c =>
+          val start: String = c.name.substring(c.name.indexOf("]") + 1).trim
+          fmt.parseDateTime(start)
+        }
+
+        val endDate: Option[DateTime] = boardCardList.find(c => c.name.contains("end")).map { c =>
+          val end: String = c.name.substring(c.name.indexOf("]") + 1).trim
+          fmt.parseDateTime(end)
+        }
+
+        boardCardList.foreach { card =>
+
+          parseNameAsValue(card.name) match {
+            case Some(intValue) =>
+
+              scopePoints = scopePoints + intValue
+
+              card.labels.foreach { label =>
+                label.color match {
+                  case "blue" => progress = progress + intValue
+                  case "green" => finished = finished + intValue
+                  case "purple" => scopePoints = scopePoints - intValue
+                  case "red" => scopePoints = scopePoints - intValue
+                  case _ => Logger.info(s"Color `${label.color}` not taken into account")
+                }
+              }
+
+            case _ =>
+          }
+        }
+
+        val validDates = for {
+          sDate <- startDate
+          eDate <- endDate
+        } yield (sDate, eDate)
+
+        val pointForToday: Point = Point(id = None, boardId, new DateTime(), scopePoints, progress, finished)
+        val days: Option[Int] = Some(Days.daysBetween(validDates.get._1, validDates.get._2).getDays)
+        val boardPeriod: Period = Period(id = None, boardId, validDates.get._1, validDates.get._2, days)
+
+        (pointForToday, boardPeriod)
+
+    }
+  }
+
+  def createBestLine(p: Period, finishedLine: List[LineElement]): Future[List[LineElement]] = Future.successful {
+
+    val regression = new SimpleRegression
+
+    regression.addData(0, 0)
+
+    finishedLine.zipWithIndex.foreach {
+      case (v, i) => regression.addData(i, v.y)
+    }
+
+    val df = new DecimalFormat("#.0")
+
+    p.periodInDayes.fold(List.empty[LineElement]) { days =>
+
+      (for {
+        i <- 0 to days
+      } yield {
+        LineElement(
+          p.startDate.toLocalDate.plusDays(i).toDateTimeAtStartOfDay.getMillis,
+          df.format(regression.getSlope * i).toDouble
+        )
+      }).toList
+    }
+  }
+
+  def createFinishedLine(p: Period): Future[List[LineElement]] = {
+
+    val vS = p.periodInDayes.fold(List.empty[LineElement]) { days =>
+
+      var finishedVal: Int = 0
+
+      val v = (for {
+        i <- 0 to days
+      } yield {
+        p.startDate.plusDays(i).toLocalDate
+      }).zipWithIndex.map {
+        case (d, i) =>
+
+          if (i == 0) {
+            LineElement(d.toDateTimeAtStartOfDay.getMillis, 0)
+          } else {
+            boardService.pointForDay(p.boardId, d).map { period =>
+              finishedVal = period.finished
+              LineElement(d.toDateTimeAtStartOfDay.getMillis, period.finished)
+            } getOrElse {
+              LineElement(d.toDateTimeAtStartOfDay.getMillis, finishedVal)
+            }
+          }
       }
 
-      val validDates = for {
-        sDate <- startDate
-        eDate <- endDate
-      } yield (sDate, eDate)
-
-
-      val pointForToday: Point = Point(None, boardCard._1, new Date(), points, progress, finished)
-      val days: Option[Int] = Some(Days.daysBetween(validDates.get._1, validDates.get._2).getDays)
-      val boardPeriod: Period = Period(None, boardCard._1, validDates.get._1.toDate, validDates.get._2.toDate, days)
-
-
-      (pointForToday, boardPeriod)
+      v.toList
 
     }
 
-    result
+    Future.successful(vS)
+  }
+
+  def createScopeLine(p: Period): Future[List[LineElement]] = Future.successful {
+    p.periodInDayes.fold(List.empty[LineElement]) { days =>
+      var scopeVal: Int = 0
+
+      (for {
+        i <- 0 to days
+      } yield {
+        p.startDate.plusDays(i).toLocalDate
+      }).map { t =>
+        boardService.pointForDay(p.boardId, t).map { p =>
+          scopeVal = p.scope
+          LineElement(t.toDateTimeAtStartOfDay.getMillis, p.scope)
+        } getOrElse {
+          LineElement(t.toDateTimeAtStartOfDay.getMillis, scopeVal)
+        }
+      }.toList
+    }
   }
 }

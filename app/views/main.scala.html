@@ -7,11 +7,14 @@
         <title>@info.title | @util.Config.siteTitle</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width,maximum-scale=1"/>
-        <link href="//fonts.googleapis.com/css?family=PT+Serif:700italic" rel="stylesheet" type="text/css">
-        <link href="//fonts.googleapis.com/css?family=Open+Sans+Condensed:700,300" rel="stylesheet" type="text/css">
+        <link href="//fonts.googleapis.com/css?family=Roboto|Montserrat:400,700|Open+Sans:400,300,600" rel="stylesheet">
 
-        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("font-awesome/4.3.0/css/font-awesome.css"))'>
-        <link rel="stylesheet" href="@routes.Assets.versioned("css/main.min.css")">
+        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("css/font-awesome.css"))'>
+        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("css/bootstrap.css"))'>
+        <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("nv.d3.min.css"))'>
+        <link rel="stylesheet" href="@routes.Assets.versioned("css/main.css")">
+
+
     </head>
     <body>
         <div class="">
@@ -20,5 +23,14 @@
         <div class="container">
             @content
         </div>
+
+
+        @*<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.min.js"))'></script>*@
+        @*<script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.js"))"></script>*@
+        @*<script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("d3.min.js"))"></script>*@
+        @*<script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("nv.d3.min.js"))"></script>*@
+        @*<script type="text/javascript" src="@routes.Assets.versioned("javascripts/main.js")"></script>*@
+
+        <script data-main="@routes.Assets.versioned("javascripts/main.js")" src="@routes.Assets.versioned("lib/requirejs/require.min.js")"></script>
     </body>
 </html>

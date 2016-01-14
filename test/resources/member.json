@@ -1,0 +1,67 @@
+{
+  "id":"51e54f0ddc62af4c16001b78",
+  "avatarHash":"a39de951a2d459a79a902bf377d7e6d6",
+  "bio":"",
+  "bioData":null,
+  "confirmed":true,
+  "fullName":"Lars Arnbak",
+  "idPremOrgsAdmin":[
+
+  ],
+  "initials":"LA",
+  "memberType":"normal",
+  "products":[
+
+  ],
+  "status":"disconnected",
+  "url":"https://trello.com/larsarnbak2",
+  "username":"larsarnbak2",
+  "avatarSource":"gravatar",
+  "email":null,
+  "gravatarHash":"273978609efb06d1ffbbaa6e7cc23a67",
+  "idBoards":[
+    "51e54f0edc62af4c16001b7a",
+    "551af5c8080db648ac0148bb"
+  ],
+  "idOrganizations":[
+
+  ],
+  "loginTypes":null,
+  "oneTimeMessagesDismissed":[
+
+  ],
+  "prefs":{
+    "sendSummaries":true,
+    "minutesBetweenSummaries":60,
+    "minutesBeforeDeadlineToNotify":1440,
+    "colorBlind":false,
+    "locale":""
+  },
+  "trophies":[
+
+  ],
+  "uploadedAvatarHash":null,
+  "premiumFeatures":[
+
+  ],
+  "idBoardsPinned":null,
+  "organizations":[
+
+  ],
+  "boards":[
+    {
+      "name":"Test Board",
+      "closed":false,
+      "idOrganization":null,
+      "pinned":null,
+      "id":"551af5c8080db648ac0148bb"
+    },
+    {
+      "name":"Welcome Board",
+      "closed":false,
+      "idOrganization":null,
+      "pinned":null,
+      "id":"51e54f0edc62af4c16001b7a"
+    }
+  ]
+}

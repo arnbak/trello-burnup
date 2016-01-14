@@ -1,6 +1,50 @@
-@(info: models.PageInfo, user: Option[models.User] = None)
+@(info: models.PageInfo,
+        user: Option[models.User],
+        boardForm: Form[forms.AccumulateBoardList])(implicit request: RequestHeader, messages: Messages)
+
+@import b3.inline.fieldConstructor
 
 @main(info, user){
-    <h1>User profile</h1>
-    @user
+    <div class="row">
+
+
+        <div class="col-md-8">
+            <h3>Boards</h3>
+
+            @b3.form(action = routes.Application.accumulationMark) {
+                @helper.CSRF.formField
+
+                @helper.repeat(boardForm("boards")) { elem =>
+                     @b3.free() {
+                         @elem("boardId")
+                     }
+
+                    @b3.text(elem("boardId"))
+                    @b3.text(elem("boardName"))
+                    @b3.checkbox(elem("selected"))
+                }
+
+                @b3.free() {
+                    <button class="btn btn-primary" type="submit">Gem</button>
+                }
+            }
+        </div>
+        <div class="col-md-3">
+            <h3>User profile</h3>
+            <p>
+                @user.map { u =>
+                    @u.fullName
+                    <br />
+                    @u.email
+                    <br />
+                }
+            </p>
+        </div>
+    </div>
+
+
+
+
+
+
 }

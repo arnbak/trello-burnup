@@ -1,54 +1,66 @@
 @(info: models.PageInfo,
         user: Option[models.User] = None,
-        authUrl: Option[String] = None,
-        member: Option[services.Member])(implicit flash: Flash)
+        boardList: List[models.DBBoard])(implicit request: RequestHeader,  messages: Messages)
+@import util.Config
 
 @main(info, user) {
-
     <div class="row">
-        <div class="col-md-6">
-            @member.map { board =>
-                <h2>Welcome @board.fullName</h2>
-
-                <h3>This is your boards</h3>
-                <ul>
-                    @for(mBoard <- member.get.boards) {
-                        <li><a href="/board/@mBoard.id">@mBoard.name</a></li>
-                    }
-                </ul>
-
-            }.getOrElse {
-
-                <h4>No Trello developer key and token exists for this user.</h4>
-
-                <small>We need to add these to your user.</small>
-
-                <ol>
-                    <li>Sign in to trello here: <a href="http://trello.com" target="_blank">trello.com</a><small> (Opens a new window)</small></li>
-                    <li>Call this url: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a> <small>(Copy the key to the clipboard)</small></li>
-                    <li>Save the developer key <a href="@routes.UserController.keyForm()">here</a></li>
-
-                    @user.map { u =>
-                        @u.key.map { key =>
-
-                        }
-                    }
-
-                    @authUrl.map { url =>
-                        <li>Authorize the app (this) <a href="@url" target="_blank">@url</a></li>
-                        <li>Save the token <a href="@routes.UserController.tokenForm()">here</a></li>
-                    }
-
-                </ol>
+        <div class="col-md-12">
+            @request.flash.get("error").map { message =>
+                <div class="col-md-6 alert alert-danger alert-error">
+                    <a href="#" class="close" data-dismiss="alert">&times;</a>
+                    <strong>@Messages("error")</strong> @message
+                </div>
             }
-        </div>
 
-        <div class="col-md-6">
-            @flash.get("success").map { message =>
-                <div class="alert alert-success" role="alert">
+            @request.flash.get("success").map { message =>
+                <div class="col-md-6 alert alert-success">
+                    <a href="#" class="close" data-dismiss="alert">&times;</a>
                     <strong>Success!</strong> @message
                 </div>
             }
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-9">
+
+            <h4>Listing your boards</h4>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Selected</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @boardList.map { b =>
+                        <tr>
+                            <td><a href="@routes.Application.board(b.id)">@b.id</a></td>
+                            <td>@b.name</td>
+                            <td>
+                                @if(b.selected) {
+                                    <i class="fa fa-thumbs-o-up"></i>
+                                } else {
+                                    <i class="fa fa-thumbs-o-down"></i>
+                                }
+                            </td>
+                            <td>@Config.formatDateTime(b.updated)</td>
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+
+        </div>
+
+
+
+        <div class="col-md-3">
+            <a class="btn btn-default pull-right" href="@routes.Application.accumulateToday()">Opdatér akkumulering</a>
         </div>
 
     </div>

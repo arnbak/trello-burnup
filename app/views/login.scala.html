@@ -1,4 +1,4 @@
-@(info: models.PageInfo, loginForm: Form[controllers.LoginController.LoginForm])(implicit flash: Flash)
+@(info: models.PageInfo, socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry)(implicit request: RequestHeader, messages: Messages)
 
 @main(info, None) {
 
@@ -6,36 +6,30 @@
 
         <div class="col-md-6">
 
-            <h3>Sign in <small>...with your email address</small></h3>
+            <h3>Velkommen <small>Log ind med din Trello konto</small></h3>
 
-            @helper.form(action = routes.LoginController.login()) {
-
-                @loginForm.globalError.map { error =>
-                    <p class="error">
-                        @error.message
-                    </p>
-                }
-
-                @helper.inputText(loginForm("email"), '_label -> "Email", '_showConstraints -> false)
-                @helper.inputPassword(loginForm("password"), '_label -> "Password", '_showConstraints -> false)
-
-                <button type="submit">Log ind</button>
+            @if(socialProviders.providers.nonEmpty) {
+                <div class="social-providers">
+                    <div>
+                    @for(p <- socialProviders.providers if p.id != "clef") {
+                        <a href="@routes.SocialAuthController.authenticate(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@routes.Assets.versioned(s"images/providers/${p.id}.png")" width="256px" height="78px" alt="@Messages(p.id)"></a>
+                    }
+                    </div>
+                </div>
             }
-
-
 
         </div>
 
         <div class="col-md-6">
 
 
-            @flash.get("error").map { message =>
+            @request.flash.get("error").map { message =>
                 <div class="alert alert-danger" role="alert">
                     <strong>Error!</strong> @message
                 </div>
             }
 
-            @flash.get("success").map { message =>
+            @request.flash.get("success").map { message =>
                 <div class="alert alert-success" role="alert">
                     <strong>Success!</strong> @message
                 </div>
@@ -43,7 +37,7 @@
 
             <blockquote>
                 <p>
-                    <small>To use the system, you need a user. Create one <a href="@routes.LoginController.createPage()">here</a></small>
+                    <small>To use the system, you need a trello account. Create one <a href="http://trello.com">here</a></small>
                 </p>
             </blockquote>
 

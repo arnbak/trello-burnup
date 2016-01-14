@@ -1,71 +1,152 @@
 package controllers
 
-import models.{PageInfo, Users, User}
-import play.api.mvc._
-import play.api.db.slick._
-import play.api.Play.current
-import services.TrelloService
+import javax.inject.Inject
 
+import com.mohiva.play.silhouette.api.{ Silhouette, Environment }
+import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import forms.{ AccumulateBoard, AccumulateBoardForm, AccumulateBoardList }
+
+import models._
+import play.api.Logger
+import play.api.i18n.MessagesApi
+import play.api.libs.json._
+import play.api.libs.json.Json._
+
+import services.{ BoardService, TrelloService }
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 
-object Application extends Controller with Secured {
+class Application @Inject() (
+    val messagesApi: MessagesApi,
+    val env: Environment[User, CookieAuthenticator],
+    trelloService: TrelloService,
+    boardService: BoardService) extends Silhouette[User, CookieAuthenticator] {
 
-  def dashboard = IsAuthedAsync { email => implicit request =>
+  def dashboard = SecuredAction.async { implicit request =>
 
-    DB.withSession { implicit s =>
-      Users.findByEmail(email).map { user =>
+    val remoteBoardFuture = trelloService.member(request.identity).flatMap { memberResult =>
 
-        val authUrl: Option[String] = user.key.map { key =>
-          s"https://trello.com/1/authorize?key=$key&name=TrelloReleaseBurnUP&expiration=never&response_type=token&scope=read"
-        }
-
-        val boardUrl = (for {
-          key <- user.key
-          token <- user.token
-          if !token.isEmpty && !key.isEmpty
-        } yield (key, token)).map { v =>
-          s"https://api.trello.com/1/members/me?key=${v._1}&token=${v._2}&boards=all&organizations=all"
-        }
-
-        boardUrl.map { url =>
-          TrelloService.member(url).flatMap { m =>
-            Future.successful(Ok(views.html.index(PageInfo("Dashboard", request.uri), Some(user), authUrl, Some(m))))
+      val boards = memberResult.boards.map { board =>
+        boardService.findBoardById(board.id).map { dbBoardOpt =>
+          dbBoardOpt.map { b =>
+            List(b)
+          } getOrElse {
+            List.empty
           }
-        } getOrElse {
-          Future.successful(Ok(views.html.index(PageInfo("Dashboard", request.uri), Some(user), authUrl, None)))
         }
+      }
 
+      Future.sequence(boards).map { l => l.flatten }
+    }
+
+    remoteBoardFuture.map { boardList =>
+      Ok(views.html.index(PageInfo("Dashboard", request.uri), Some(request.identity), boardList))
+    }
+  }
+
+  def profile = SecuredAction.async { implicit request =>
+
+    val remoteBoardFuture = trelloService.member(request.identity).flatMap { memberResult =>
+
+      val list = memberResult.boards.map { board =>
+        boardService.findBoardById(board.id).map { dbBoardOpt =>
+
+          dbBoardOpt.map { dbBoard =>
+            AccumulateBoardForm(dbBoard.id, dbBoard.name, dbBoard.selected)
+          } getOrElse {
+            AccumulateBoardForm(board.id, board.name, selected = false)
+          }
+        }
+      }
+
+      Future.sequence(list).map { res =>
+        AccumulateBoardList(res)
+      }
+    }
+
+    remoteBoardFuture.map { list =>
+      Ok(views.html.profile.profile(PageInfo("Profile", request.uri), user = Some(request.identity), AccumulateBoard.boardList.fill(list)))
+    }
+  }
+
+  def board(id: String) = SecuredAction.async { implicit request =>
+    trelloService.member(request.identity).map { memberResult =>
+      memberResult.boards.find(_.id == id).map { board =>
+        Ok(views.html.boards.board(PageInfo("Board Info", request.uri), user = Some(request.identity), board))
       } getOrElse {
-        Future.successful(Redirect(routes.LoginController.loginPage()))
+        Redirect(routes.Application.dashboard()).flashing("error" -> "That board does not exist")
       }
     }
   }
-}
 
-trait Secured {
+  def accumulationMark = UserAwareAction.async { implicit request =>
 
-  private def email(request: RequestHeader) = request.session.get("email")
+    AccumulateBoard.boardList.bindFromRequest().fold(
+      errors => Future.successful {
+        Redirect(routes.Application.dashboard())
+      },
+      boardList => {
 
-  private def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.LoginController.loginPage())
-
-  def IsAuthenticated(f: => User => DBSessionRequest[AnyContent] => Result) = {
-    Security.Authenticated(email, onUnauthorized) { email =>
-      DBAction( implicit request =>
-        Users.findByEmail(email).map {
-          u => f(u)(request)
-        } getOrElse {
-          onUnauthorized(request)
+        boardService.updateBoard(boardList.boards).map { updatedList =>
+          Redirect(routes.Application.dashboard())
+        } recoverWith {
+          case e: Exception =>
+            Logger.error("Error while trying to mark board for accumulation", e)
+            Future.successful(Redirect(routes.Application.dashboard()).flashing("error" -> "There were an error marking board for accumulation"))
         }
-      )
+      }
+    )
+  }
+
+  def period(boardId: String) = SecuredAction.async { implicit request =>
+    boardService.periodByBoardId(boardId).map {
+      case Some(period) => Ok(Json.toJson(period))
+      case None => NotFound(Json.obj("message" -> ("no period found for boardid: " + boardId)))
     }
   }
 
-  def IsAuthedAsync(f: => String => Request[_] => Future[Result]) = {
-    Security.Authenticated(email, onUnauthorized) { email =>
-      Action.async( implicit request =>
-        f(email)(request)
-      )
+  def series(boardId: String) = SecuredAction.async { implicit request =>
+    boardService.periodByBoardId(boardId).flatMap {
+      case Some(period) =>
+
+        val scopeLineFuture = trelloService.createScopeLine(period)
+        val finishedLineFuture = trelloService.createFinishedLine(period)
+
+        (for {
+          scopeLine <- scopeLineFuture
+          finishedLine <- finishedLineFuture
+          bestLine <- trelloService.createBestLine(period, finishedLine)
+        } yield (scopeLine, finishedLine, bestLine)).map {
+          case (s, f, b) => Ok(Json.obj("scopeLine" -> s, "finishedLine" -> f, "bestLine" -> b))
+        } recoverWith {
+          case e: Throwable =>
+            Logger.error("Exception", e)
+            Future.successful(Redirect(routes.Application.dashboard()).flashing("error" -> s"Error trying to fetch series for $boardId"))
+        }
+
+      case None => Future.successful(NotFound(Json.obj("message" -> s"no series found for boardid: $boardId")))
+    }
+  }
+
+  def accumulateToday = SecuredAction.async { implicit request =>
+
+    val boardInfoFuture = boardService.listBoardsForAccumulation.flatMap { boards =>
+      trelloService.boardInfo(request.identity, boards)
+    }
+
+    (for {
+      board <- boardInfoFuture
+      summerized <- trelloService.summarizeInfo(board)
+      dbUpdated <- boardService.saveAccumulatedData(summerized)
+    } yield {
+      Redirect(routes.Application.dashboard()).flashing("success" -> "Accumulation run with success")
+    }).recoverWith {
+      case e: Throwable =>
+        Logger.error("Error", e)
+        Future.successful {
+          Redirect(routes.Application.dashboard()).flashing("error" -> "Error while trying to run accumulation for today")
+        }
+
     }
   }
 
