@@ -1,10 +1,11 @@
-@(info: models.PageInfo, user: Option[models.User] = None, board: models.Board)
+@(info: models.PageInfo,
+        user: Option[models.User] = None,
+        board: models.Board)
 
 @main(info, user) {
 
-    <h4>@board.name</h4>
+    <h3>@board.name <small>@board.id</small></h3>
 
-    @board
 
     <div id="chart">
         <svg></svg>

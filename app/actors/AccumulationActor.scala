@@ -4,6 +4,7 @@ import akka.actor.{ ActorLogging, Actor }
 import akka.pattern.pipe
 import com.google.inject.Inject
 import models.User
+import com.microsoft.aad.adal4j.{ AuthenticationContext, AuthenticationResult }
 
 import play.Logger
 import services.{ BoardService, TrelloService, UserService }
@@ -30,11 +31,11 @@ class AccumulationActor @Inject() (userService: UserService,
   def receive = {
 
     case Accumulate => {
-      Logger.info("Accumulate")
+      log.info("Accumulate")
       accumulate()
     }
 
-    case _ => Logger.warn("Unhandled Message")
+    case _ => log.warning("Unhandled Message")
   }
 
   def accumulate() = {
